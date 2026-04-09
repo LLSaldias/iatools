@@ -1,0 +1,9 @@
+schema: spec-driven
+change: focus-on-memory
+created: 2026-04-06T00:00:00Z
+status: planning
+artifacts:
+  proposal: done
+  specs: done
+  design: done
+  tasks: done

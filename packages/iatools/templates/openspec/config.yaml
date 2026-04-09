@@ -1,0 +1,16 @@
+project: {{PROJECT_NAME}}
+schema: spec-driven
+created: {{DATE}}
+
+# Default workflow schema used when creating new changes.
+# Options: spec-driven
+defaultSchema: spec-driven
+
+# Archive directory relative to openspec/changes/
+archiveDir: archive
+
+# Skills directory relative to project root
+skillsDir: .agents/skills
+
+# Workflows directory relative to project root
+workflowsDir: .agents/workflows

@@ -1,0 +1,45 @@
+{
+    "name": "@nx-cardbuilding/iatools",
+    "version": "1.6.0",
+    "description": "CLI tool that bootstraps the Spec-Driven Development (SDD) framework into any project. Installs agents, skills, workflows, and an openspec/ structure tailored to the developer's IDE and role.",
+    "main": "./lib/index.js",
+    "bin": {
+        "iatools": "lib/index.js"
+    },
+    "license": "MIT",
+    "typings": "./lib/index.d.ts",
+    "directories": {
+        "lib": "lib",
+        "test": "test"
+    },
+    "files": [
+        "/lib",
+        "/templates"
+    ],
+    "scripts": {
+        "compile": "tsc && tsc-alias",
+        "test": "jest --detectOpenHandles",
+        "coverage": "jest --coverage --detectOpenHandles",
+        "lint": "eslint ./src ./test",
+        "fix": "eslint --fix ./src ./test",
+        "dependency-check": "depcheck .",
+        "dev": "ts-node -r tsconfig-paths/register src/index.ts"
+    },
+    "dependencies": {
+        "better-sqlite3": "^11.0.0",
+        "chalk": "^4.1.2",
+        "commander": "^12.1.0",
+        "fs-extra": "^11.2.0",
+        "inquirer": "^8.2.6",
+        "nanoid": "^3.3.7",
+        "ora": "^5.4.1",
+        "rxjs": "^7.8.2"
+    },
+    "devDependencies": {
+        "@types/better-sqlite3": "^7.6.12",
+        "@types/fs-extra": "^11.0.4",
+        "@types/inquirer": "^8.2.10",
+        "@types/jest": "^29.5.14",
+        "tsc-alias": "^1.8.16"
+    }
+}

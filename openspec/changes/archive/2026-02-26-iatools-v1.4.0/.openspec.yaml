@@ -1,0 +1,9 @@
+schema: spec-driven
+change: iatools-v1.3.0
+created: 2026-02-24T17:29:07-03:00
+status: archived
+artifacts:
+  proposal: done
+  specs: done
+  design: done
+  tasks: done

@@ -1,0 +1,111 @@
+You are a knowledge extraction assistant for the SDD Framework.
+
+Analyze the following approved proposal and extract the key architectural knowledge.
+
+## Rules
+- Extract exactly up to 3 key points, each classified as one of: Decision, Rule, or Feature.
+- For each, provide a short title and a concise Markdown description.
+- Suggest edges connecting to existing nodes if relevant. Only reference existing node IDs.
+- Maximum 5 edges total.
+- Output ONLY valid JSON, no markdown fences.
+
+## Existing Nodes in the Knowledge Graph
+- [node_001] Decision: Remove skills management from iatools
+- [node_002] Rule: init must not make remote network calls
+- [node_003] Feature: Memory System is the core differentiator
+
+## Approved Proposal
+# Proposal: memory-ingest
+
+## Summary
+
+Add an `iatools memory ingest` CLI command that closes the ingestion loop in the SDD Memory System. The library functions `buildExtractionPrompt` and `processExtractionResult` already exist in `ingestion.ts`, but there is no CLI surface that drives them end-to-end. This change wires those functions into a usable command.
+
+## Problem Statement
+
+The SDD Memory System was built to capture architectural knowledge (Decisions, Rules, Features) from approved proposals and make it reachable for future LLM sessions via retrieval. The building blocks are complete:
+
+| Component | File | Status |
+|---|---|---|
+| SQLite schema + CRUD | `memory/database.ts` | ✅ Done |
+| Prompt builder | `memory/ingestion.ts` (buildExtractionPrompt) | ✅ Done |
+| Result processor | `memory/ingestion.ts` (processExtractionResult) | ✅ Done |
+| FTS5 retrieval | `memory/retrieval.ts` | ✅ Done |
+| Export command | `commands/memory-export.ts` | ✅ Done |
+| **Ingest command** | `commands/memory-ingest.ts` | ❌ Missing |
+
+Without the ingest command, the population flow requires the user to manually call library functions — the memory graph stays empty, making retrieval useless.
+
+## Proposed Solution
+
+Implement `iatools memory ingest` with a two-step human-in-the-loop flow:
+
+**Step 1 — Prompt generation:**
+```
+iatools memory ingest --change <name>
+```
+- Reads `openspec/changes/<name>/proposal.md`
+- Queries all existing nodes from `.sdd/memory.db`
+- Calls `buildExtractionPrompt(proposalContent, existingNodes)` from `ingestion.ts`
+- Prints the extraction prompt to stdout (or saves to `.sdd/extraction-<name>.prompt.txt`)
+- Instructs the user to send the prompt to an LLM and save the JSON output
+
+**Step 2 — Result ingestion:**
+```
+iatools memory ingest --change <name> --from <path-to-json>
+```
+- Reads the JSON file produced by the LLM
+- Calls `processExtractionResult(db, rawResult, changeName)` from `ingestion.ts`
+- Reports nodes and edges created
+
+This two-step design deliberately avoids requiring LLM API keys, keeping `iatools` a framework tool rather than an AI endpoint consumer.
+
+## Why Human-in-the-Loop
+
+- `iatools` has no external HTTP dependencies after the `focus-on-memory` change removed `axios`
+- API keys are per-user configuration — not appropriate to bake into the CLI
+- The LLM prompt is transparent and auditable before sending
+- Users can use any LLM provider (ChatGPT, Claude, local model, etc.)
+
+## Scope
+
+**In scope:**
+- `src/commands/memory-ingest.ts` — new command implementation
+- `src/cli.ts` — register `memory ingest` subcommand under existing `memoryCmd`
+- Unit tests covering prompt-generation mode and JSON-ingest mode
+- `--dry-run` flag: validate the JSON and report what would be inserted, without writing to DB
+
+**Out of scope:**
+- LLM API integration (separate change if ever needed)
+- Auto-detecting the change name from git branch
+- Batch ingestion of multiple proposals at once
+- Modifying `ingestion.ts` or any other memory module
+
+## Success Criteria
+
+1. `iatools memory ingest --change <name>` prints the extraction prompt to stdout
+2. `iatools memory ingest --change <name> --from <file>` ingests the JSON and reports counts
+3. `iatools memory ingest --change <name> --from <file> --dry-run` validates without writing
+4. Error if `proposal.md` does not exist for the given change
+5. Error if `.sdd/memory.db` does not exist (user must run `iatools init` first)
+6. TypeScript compiles with zero errors
+7. All new and existing tests pass
+
+
+## Required Output Format
+{
+  "nodes": [
+    {
+      "label": "Decision" | "Rule" | "Feature",
+      "title": "Short descriptive title",
+      "content": "Concise Markdown description of the decision/rule/feature and its rationale."
+    }
+  ],
+  "edges": [
+    {
+      "source_title": "Title of the new node (from nodes above)",
+      "target_id": "existing_node_id",
+      "relation_type": "DECIDED_IN" | "CONSTRAINS" | "DEPENDS_ON" | "SUPERSEDES"
+    }
+  ]
+}

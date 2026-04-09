@@ -1,0 +1,27 @@
+name: spec-driven
+description: Standard SDD artifact workflow — proposal → specs → design → tasks
+
+artifacts:
+  - id: proposal
+    file: proposal.md
+    depends_on: []
+    apply_required: false
+    description: "Why we're doing this, what's changing, and high-level approach"
+
+  - id: specs
+    file: specs/
+    depends_on: [proposal]
+    apply_required: true
+    description: "Delta specs describing what requirements change"
+
+  - id: design
+    file: design.md
+    depends_on: [proposal]
+    apply_required: true
+    description: "Technical approach and architecture decisions"
+
+  - id: tasks
+    file: tasks.md
+    depends_on: [specs, design]
+    apply_required: true
+    description: "Implementation checklist with numbered, checkbox tasks"

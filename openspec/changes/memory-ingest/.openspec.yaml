@@ -1,0 +1,9 @@
+schema: spec-driven
+change: memory-ingest
+created: 2026-04-08
+status: planning
+artifacts:
+  proposal: done
+  specs: done
+  design: done
+  tasks: done

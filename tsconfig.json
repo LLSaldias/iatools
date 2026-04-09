@@ -1,0 +1,45 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "ES2021"
+    ],
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "target": "ES2021",
+    "strict": true,
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "noImplicitReturns": false,
+    "noImplicitAny": false,
+    "noUnusedLocals": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedParameters": true,
+    "ignoreDeprecations": "5.0",
+    "checkJs": true,
+    "types": [
+      "node",
+      "jest"
+    ],
+    "baseUrl": "./packages",
+    "declaration": true,
+    "declarationMap": true
+  },
+  "exclude": [
+    "./packages/lib"
+  ],
+  "typeRoots": [
+    "./src/types",
+    "node_modules/@types"
+  ]
+}

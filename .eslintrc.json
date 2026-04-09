@@ -1,0 +1,101 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "plugin:n/recommended",
+    "google",
+    "prettier"
+  ],
+  "plugins": [
+    "n",
+    "prettier"
+  ],
+  "env": {
+      "es6": true,
+      "node": true
+  },
+  "parserOptions": {
+      "ecmaVersion": 2021,
+      "sourceType": "module"
+  },
+  "rules": {
+    "n/no-missing-import": "off",
+    "n/no-extraneous-import": ["error", {
+      "allowModules": []
+  }],
+    "prettier/prettier": "error",
+    "block-scoped-var": "error",
+    "eqeqeq": "error",
+    "no-var": "error",
+    "prefer-const": "error",
+    "eol-last": "error",
+    "prefer-arrow-callback": "error",
+    "no-trailing-spaces": "error",
+    "quotes": ["warn", "single", { "avoidEscape": true }],
+    "no-restricted-properties": [
+      "error",
+      {
+        "object": "describe",
+        "property": "only"
+      },
+      {
+        "object": "it",
+        "property": "only"
+      }
+    ],
+    "complexity": ["error", 10],
+    "max-len": ["error", 100],
+    "max-depth": "error",
+    "max-lines": "error",
+    "max-lines-per-function": "error",
+    "max-nested-callbacks": "error",
+    "max-params": ["warn", 6],
+    "max-statements": "error",
+    "n/no-unpublished-import": [
+      "error",
+      {
+        "allowModules": ["ts-jest"]
+      }
+    ]
+  },
+    "overrides": [
+  {
+    "files": ["**/*.ts", "**/*.tsx"],
+    "parser": "@typescript-eslint/parser",
+    "extends": [
+      "plugin:@typescript-eslint/recommended"
+    ],
+    "parserOptions": {
+      "ecmaVersion": 2021,
+      "sourceType": "module"
+    },
+    "rules": {
+      "n/no-empty-function": "off",
+      "n/no-unsupported-features/es-syntax": "off"
+    }
+  },
+  {
+    "files": ["test/**/*.ts", "test/**/*.tsx"],
+    "parser": "@typescript-eslint/parser",
+    "plugins": ["jest"],
+    "extends": [
+      "plugin:@typescript-eslint/recommended",
+      "plugin:jest/recommended"
+    ],
+    "env": {
+      "es6": true,
+      "node": true,
+      "jest": true
+    },
+    "rules": {
+      "max-statements": "off",
+      "max-len": ["error", { "code": 120 }],
+      "max-lines-per-function": "off",
+      "@typescript-eslint/no-non-null-assertion": "off",
+      "n/no-unsupported-features/es-syntax": "off",
+      "n/no-extraneous-import": ["error", {
+        "allowModules": ["@jest/globals"]
+    }]
+    }
+  }
+]
+}

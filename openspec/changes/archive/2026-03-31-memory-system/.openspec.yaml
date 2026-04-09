@@ -1,0 +1,9 @@
+schema: spec-driven
+change: memory-system
+created: 2026-03-27
+status: archived
+artifacts:
+  proposal: done
+  specs: done
+  design: done
+  tasks: done
