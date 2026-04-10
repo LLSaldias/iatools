@@ -3,21 +3,21 @@
  * Registers all top-level commands and subcommands.
  */
 
+import { runInit } from '@/commands/init';
+import { runMemoryExport } from '@/commands/memory-export';
+import { runMemoryIngest } from '@/commands/memory-ingest';
+import { runUpdate } from '@/commands/update';
 import { Command } from 'commander';
 import * as path from 'path';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { version } = require('../package.json') as { version: string };
-import { runInit } from '@/commands/init';
-import { runUpdate } from '@/commands/update';
-import { runMemoryExport } from '@/commands/memory-export';
-import { runMemoryIngest } from '@/commands/memory-ingest';
 
 export const program = new Command();
 
 program
   .name('iatools')
   .description(
-    '@nx-cardbuilding/iatools — Spec-Driven Development framework bootstrapper'
+    '@lsframework/iatools — Spec-Driven Development framework bootstrapper'
   )
   .version(version);
 

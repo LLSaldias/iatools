@@ -68,7 +68,7 @@ export const logger = {
         console.log('');
         console.log(chalk.bold.magenta('  ╔══════════════════════════════════════╗'));
         console.log(chalk.bold.magenta('  ║') + chalk.bold.white('   🪄  iatools  ·  SDD Framework       ') + chalk.bold.magenta('║'));
-        console.log(chalk.bold.magenta('  ║') + chalk.dim('   @nx-cardbuilding/iatools               ') + chalk.bold.magenta('║'));
+        console.log(chalk.bold.magenta('  ║') + chalk.dim('   @lsframework/iatools                   ') + chalk.bold.magenta('║'));
         console.log(chalk.bold.magenta('  ╚══════════════════════════════════════╝'));
         console.log('');
     },

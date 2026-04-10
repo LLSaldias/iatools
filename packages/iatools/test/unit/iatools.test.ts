@@ -1,7 +1,7 @@
-import { interpolate } from '../../src/utils/file-writer';
-import { ROLES } from '../../src/roles/index';
-import { getIdeAdapter, IDE_ADAPTERS } from '../../src/ides/index';
 import * as path from 'path';
+import { getIdeAdapter, IDE_ADAPTERS } from '../../src/ides/index';
+import { ROLES } from '../../src/roles/index';
+import { interpolate } from '../../src/utils/file-writer';
 
 jest.mock('fs-extra');
 jest.mock('@/memory/database');
@@ -352,6 +352,50 @@ describe('memory ingest', () => {
       await runMemoryIngest({ change: '', dir: PROJECT_ROOT, dryRun: false, all: true });
 
       expect(ingestionMock.buildExtractionPrompt).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('tryGenerateExtractionPrompt', () => {
+    it('T-09a: happy path — calls runPromptMode when DB exists', async () => {
+      fsMock.pathExists.mockResolvedValue(true);
+
+      const { tryGenerateExtractionPrompt } = await import('../../src/commands/memory-ingest');
+      await tryGenerateExtractionPrompt('my-change', PROJECT_ROOT);
+
+      expect(ingestionMock.buildExtractionPrompt).toHaveBeenCalled();
+      expect(fsMock.outputFile).toHaveBeenCalledWith(
+        path.join(PROJECT_ROOT, '.sdd', 'extraction-my-change.prompt.txt'),
+        'EXTRACTION PROMPT CONTENT',
+        'utf8'
+      );
+    });
+
+    it('T-09b: missing DB — warns and does not call runPromptMode', async () => {
+      fsMock.pathExists.mockImplementation((p: string) =>
+        Promise.resolve(!p.includes('memory.db'))
+      );
+
+      const { tryGenerateExtractionPrompt } = await import('../../src/commands/memory-ingest');
+      await tryGenerateExtractionPrompt('my-change', PROJECT_ROOT);
+
+      expect(ingestionMock.buildExtractionPrompt).not.toHaveBeenCalled();
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Memory database not found')
+      );
+    });
+
+    it('T-09c: prompt generation error — warns and does not throw', async () => {
+      fsMock.pathExists.mockResolvedValue(true);
+      fsMock.readFile.mockRejectedValueOnce(new Error('disk read failure'));
+
+      const { tryGenerateExtractionPrompt } = await import('../../src/commands/memory-ingest');
+      await expect(
+        tryGenerateExtractionPrompt('my-change', PROJECT_ROOT)
+      ).resolves.toBeUndefined();
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Prompt generation failed')
+      );
     });
   });
 });

@@ -1,5 +1,5 @@
 {
-    "name": "@nx-cardbuilding/iatools",
+    "name": "@lsframework/iatools",
     "version": "1.6.0",
     "description": "CLI tool that bootstraps the Spec-Driven Development (SDD) framework into any project. Installs agents, skills, workflows, and an openspec/ structure tailored to the developer's IDE and role.",
     "main": "./lib/index.js",
@@ -26,6 +26,8 @@
         "dev": "ts-node -r tsconfig-paths/register src/index.ts"
     },
     "dependencies": {
+        "@lsframework/iatools": "workspace:*",
+        "@lsframework/iatools": "workspace:*",
         "better-sqlite3": "^11.0.0",
         "chalk": "^4.1.2",
         "commander": "^12.1.0",

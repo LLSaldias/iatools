@@ -7,13 +7,13 @@
  * - JSON Ingestion: consumes an LLM extraction result JSON and commits it to .sdd/memory.db.
  */
 
-import * as path from 'path';
-import * as fs from 'fs-extra';
-import ora from 'ora';
 import { MemoryDB } from '@/memory/database';
 import { buildExtractionPrompt, processExtractionResult } from '@/memory/ingestion';
 import type { ExtractionResult } from '@/memory/types';
 import { logger } from '@/utils/logger';
+import * as fs from 'fs-extra';
+import ora from 'ora';
+import * as path from 'path';
 
 /** Options accepted by the memory ingest command */
 export interface MemoryIngestOptions {
@@ -52,7 +52,7 @@ export async function runMemoryIngest(options: MemoryIngestOptions): Promise<voi
  *
  * @param {MemoryIngestOptions} options - Parsed CLI options.
  */
-async function runPromptMode(options: MemoryIngestOptions): Promise<void> {
+export async function runPromptMode(options: MemoryIngestOptions): Promise<void> {
   const proposalPath = path.join(
     options.dir,
     'openspec',
@@ -257,6 +257,30 @@ function printBatchSummary(results: BatchResult[]): void {
     } else {
       logger.error(`${r.name.padEnd(30)} (${r.reason ?? 'unknown error'})`);
     }
+  }
+  logger.newline();
+}
+
+/**
+ * Pre-archive hook: attempt to generate an extraction prompt for a change.
+ * Never throws — logs a warning on any failure so the archive can continue.
+ *
+ * @param changeName - The name of the change being archived.
+ * @param dir - Project root directory.
+ */
+export async function tryGenerateExtractionPrompt(changeName: string, dir: string): Promise<void> {
+  const dbPath = path.join(dir, '.sdd', 'memory.db');
+
+  if (!(await fs.pathExists(dbPath))) {
+    logger.warn('Memory database not found. Skipping prompt generation.');
+    return;
+  }
+
+  try {
+    await runPromptMode({ change: changeName, dir, dryRun: false, all: false });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    logger.warn(`Prompt generation failed: ${msg}. Continuing with archive.`);
   }
   logger.newline();
 }

@@ -3,7 +3,7 @@
 ### Proceso de instalación
 similar al flujo de NPX SKILLS.SH 
 
-`npx "@nx-cardbuilding/iatools" --init`
+`bunx "@lsframework/iatools" --init`
 
 
 - consulta el IDE
@@ -12,7 +12,7 @@ similar al flujo de NPX SKILLS.SH
 - instala skills predefinidas.
 - instala skills custom
 
-`npx "@nx-cardbuilding/iatools" --update`
+`bunx "@lsframework/iatools" --update`
 
 
 
@@ -25,7 +25,7 @@ similar al flujo de NPX SKILLS.SH
 
 importación directa. actualización según version de la lib.
 *VALIDAR* 
-- publicación JFrog -> assets vs proto.typescript
+- publicación npm registry -> assets vs proto.typescript
 
 
 ## Domain

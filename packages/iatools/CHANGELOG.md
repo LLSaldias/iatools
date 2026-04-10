@@ -57,7 +57,7 @@
 ## [1.0.0] - 2026-02-20
 
 ### Added
-- Initial release of `@nx-cardbuilding/iatools`
+- Initial release of `@lsframework/iatools`
 - Interactive `--init` wizard: IDE selection + multi-role setup
 - `--update` command to refresh agents and skills
 - `skills add <url>` command for installing external skill packs from GitHub
@@ -67,17 +67,6 @@
 - Role-specific bundled skills per role
 - IDE adapters: Cursor, GitHub Copilot, Gemini/Antigravity, Generic
 - `openspec/` directory scaffolding with config, schemas, and initial specs
-# Changelog
-
-## [1.0.0] - 2026-02-20
-
-### Added
-- Initial release of `@nx-cardbuilding/iatools`
-- Interactive `--init` wizard: IDE selection + multi-role setup
-- `--update` command to refresh agents and skills
-- `skills add <url>` command for installing external skill packs from GitHub
-- SDD skill templates: explore, new, ff, apply, verify, archive, continue, sync
-- Workflow (slash command) templates for all SDD phases
 - Role profiles: frontend, backend, qa, architect, product
 - Role-specific bundled skills per role
 - IDE adapters: Cursor, GitHub Copilot, Gemini/Antigravity, Generic
