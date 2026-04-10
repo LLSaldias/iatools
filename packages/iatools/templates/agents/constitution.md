@@ -39,7 +39,7 @@ All coding work must follow the rules in `copilot-instructions.md` at the projec
 - **TypeScript strict mode** — `strict: true`, no `any` without documented justification
 - **Test coverage ≥ 80%** per package — not negotiable
 - **Naming**: kebab-case files, PascalCase classes, camelCase functions, UPPER_SNAKE_CASE constants
-- **Package names**: `@nx-cardbuilding/<package-name>`
+- **Package names**: follow the project’s scoped naming convention
 - **Never create files outside `packages/`** (except SDD framework files in `openspec/` and `.agents/`)
 
 ---

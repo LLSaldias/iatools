@@ -1,11 +1,11 @@
 ---
 name: constitution
-description: Master constitution for all AI agents working on card-building-framework. Defines hard rules, SDD workflow phases, and quality gates.
+description: Master constitution for all AI agents working on ls-framework. Defines hard rules, SDD workflow phases, and quality gates.
 ---
 
-# Agent Constitution — card-building-framework
+# Agent Constitution — ls-framework
 
-**Project**: card-building-framework  
+**Project**: ls-framework  
 **Setup date**: 2026-04-06  
 **Roles active**:   
 **IDE**: GitHub Copilot (VS Code), Gemini / Antigravity
@@ -39,7 +39,7 @@ All coding work must follow the rules in `copilot-instructions.md` at the projec
 - **TypeScript strict mode** — `strict: true`, no `any` without documented justification
 - **Test coverage ≥ 80%** per package — not negotiable
 - **Naming**: kebab-case files, PascalCase classes, camelCase functions, UPPER_SNAKE_CASE constants
-- **Package names**: `@nx-cardbuilding/<package-name>`
+- **Package names**: `@lsframework/<package-name>`
 - **Never create files outside `packages/`** (except SDD framework files in `openspec/` and `.agents/`)
 
 ---

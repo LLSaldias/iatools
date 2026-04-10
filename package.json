@@ -2,7 +2,7 @@
   "name": "ls-framework",
   "description": "Monorepo for LS Framework — tools and libraries for building AI agents and skills.",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "workspaces": [
     "packages/*"
   ],

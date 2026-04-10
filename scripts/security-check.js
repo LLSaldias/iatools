@@ -31,7 +31,7 @@ async function getAuditInfo() {
   let auditInfo;
   try {
     const { stdout } = await exec(
-      'npm audit --groups dependencies --registry https://naranja.jfrog.io/artifactory/api/npm/nx_npm_public/ --json | grep auditSummary'
+      'npm audit --groups dependencies --json | grep auditSummary'
     );
     auditInfo = stdout;
   } catch (error) {
@@ -50,7 +50,7 @@ async function printAuditTable() {
   let auditTable;
   try {
     const { stdout } = await exec(
-      'npm audit --groups dependencies --registry https://naranja.jfrog.io/artifactory/api/npm/nx_npm_public/'
+      'npm audit --groups dependencies'
     );
     auditTable = stdout;
   } catch (error) {

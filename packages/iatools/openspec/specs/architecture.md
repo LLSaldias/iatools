@@ -5,7 +5,7 @@
 
 ## System Overview
 
-iatools is a Lerna monorepo managing multiple TypeScript packages published to the JFrog registry.
+iatools is part of the ls-framework monorepo, managing TypeScript packages.
 
 ## Package Topology
 
@@ -23,7 +23,7 @@ packages/
 - Packages may depend on `domain` and `domain-events`
 - `domain` and `domain-events` have NO internal package dependencies
 - Circular dependencies are forbidden
-- All inter-package imports use `@nx-cardbuilding/<name>` scoped names
+- All inter-package imports use `@lsframework/<name>` scoped names
 
 ## Build Pipeline
 
@@ -36,6 +36,5 @@ tsc (compile) → jest (test) → eslint (lint) → depcheck → publish
 | Decision | Rationale |
 |---|---|
 | Lerna monorepo | Independent versioning, shared tooling |
-| CommonJS + ES2021 | NestJS / Node.js compatibility |
-| JFrog registry | Internal artifact governance |
+| CommonJS + ES2021 | Node.js compatibility |
 | Conventional commits | Automated changelog generation |

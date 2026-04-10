@@ -85,3 +85,4 @@ packages/*/docs
 yarn-error.log
 **/.agent
 **/.agents
+bun.lock

@@ -1,7 +1,7 @@
-# Copilot Instructions - Template Lerna Monorepo
+# Copilot Instructions - LS Framework Monorepo
 
 ## Contexto del Proyecto
-Este es un template para monorepo utilizando **Lerna** como gestor de paquetes, con **TypeScript**, **Jest** y **Workspaces de npm**. El proyecto permite gestionar múltiples paquetes de forma independiente dentro de un único repositorio.
+Este es un monorepo gestionado con **Lerna** y **Bun**, con **TypeScript**, **Jest** y **Workspaces**. El proyecto permite gestionar múltiples paquetes de forma independiente dentro de un único repositorio.
 
 ## Reglas de Desarrollo
 
@@ -24,7 +24,7 @@ Este es un template para monorepo utilizando **Lerna** como gestor de paquetes, 
 - Los módulos compartidos van en `packages/sharedModules/`
 
 ### 2. Convenciones de Naming
-- **Nombres de paquetes**: Usar el formato `@nx-cardbuilding/{package-name}` en package.json
+- **Nombres de paquetes**: Usar el formato `@lsframework/{package-name}` en package.json
 - **Archivos**: Usar kebab-case para nombres de archivos (`my-module.ts`)
 - **Clases y interfaces**: PascalCase (`MyClass`, `IMyInterface`)
 - **Funciones y variables**: camelCase (`myFunction`, `myVariable`)
@@ -115,8 +115,8 @@ npm run test
 ### 10. Import/Export Patterns
 #### Para importar entre paquetes del monorepo:
 ```typescript
-import { myFunction } from '@nx-cardbuilding/other-package';
-import { sharedUtil } from '@nx-cardbuilding/sharedModules';
+import { myFunction } from '@lsframework/other-package';
+import { sharedUtil } from '@lsframework/sharedModules';
 ```
 
 #### Para exportar desde un paquete:
