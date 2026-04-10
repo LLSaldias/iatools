@@ -1,4 +1,4 @@
-# Coding Standards Spec — card-building-framework
+# Coding Standards Spec — ls-framework
 
 > **Source of truth** — distilled from `copilot-instructions.md`.  
 > Last updated: 2026-04-06
@@ -11,7 +11,7 @@
 | Classes / Interfaces | PascalCase | `MyClass`, `IMyInterface` |
 | Functions / Variables | camelCase | `myFunction` |
 | Constants | UPPER_SNAKE_CASE | `MY_CONSTANT` |
-| Package names | `@nx-cardbuilding/<name>` | `@nx-cardbuilding/domain` |
+| Package names | `@lsframework/<name>` | `@lsframework/domain` |
 
 ## Documentation
 

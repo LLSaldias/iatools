@@ -1,6 +1,6 @@
-# card-building-framework — Spec-Driven Development
+# ls-framework — Spec-Driven Development
 
-This project uses the **Spec-Driven Development (SDD)** framework, powered by `@nx-cardbuilding/iatools`.
+This project uses the **Spec-Driven Development (SDD)** framework, powered by `@lsframework/iatools`.
 
 ## Quick Start
 
@@ -49,12 +49,12 @@ explore → new → ff → apply → verify → archive
 ## Adding External Skills
 
 ```bash
-npx @nx-cardbuilding/iatools skills add <github-url> --skill <skill-id>
+bunx @lsframework/iatools skills add <github-url> --skill <skill-id>
 ```
 
 Example:
 ```bash
-npx @nx-cardbuilding/iatools skills add \
+bunx @lsframework/iatools skills add \
   https://github.com/kadajett/agent-nestjs-skills \
   --skill nestjs-best-practices
 ```
@@ -62,5 +62,5 @@ npx @nx-cardbuilding/iatools skills add \
 ## Updating the Framework
 
 ```bash
-npx @nx-cardbuilding/iatools update
+bunx @lsframework/iatools update
 ```

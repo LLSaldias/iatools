@@ -45,11 +45,11 @@ This spec covers the changes required to stop the `init` command from writing op
 
 ---
 
-## Spec 3 — No Scaffolding Code Changes
+## Spec 3 — Minimal Scaffolding Code Change
 
-**What:** `packages/iatools/src/utils/scaffolders.ts` — `scaffoldOpenspec` — is **not** modified.
+**What:** `packages/iatools/src/utils/scaffolders.ts` — `scaffoldOpenspec` — receives a single addition: an explicit `ensureDir` call for the `specs/` subdirectory to guarantee it exists even when the template directory is empty.
 
-**Rationale:** The function uses `copyTemplateDir` which copies whatever is in `templates/openspec/`. Once the two spec files are removed from the template, the function's behavior automatically becomes correct. Adding an exclusion list would be unnecessary complexity.
+**Rationale:** `copyTemplateDir` only creates destination directories when it encounters source files. With `templates/openspec/specs/` now empty, an explicit `ensureDir` is the minimal change needed. No exclusion lists or logic changes are added.
 
 ---
 
