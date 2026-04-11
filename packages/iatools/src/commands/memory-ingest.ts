@@ -10,6 +10,11 @@
 import { MemoryDB } from '@/memory/database';
 import { buildExtractionPrompt, processExtractionResult } from '@/memory/ingestion';
 import type { ExtractionResult } from '@/memory/types';
+import type { AuditEntry } from '@/safety/audit';
+import { logDecisions } from '@/safety/audit';
+import { apply } from '@/safety/redactor';
+import { scan } from '@/safety/scanner';
+import { runSanitizeReview } from '@/ui/screens/sanitize-review';
 import { logger } from '@/utils/logger';
 import * as fs from 'fs-extra';
 import ora from 'ora';
@@ -161,6 +166,36 @@ async function runIngestionMode(options: MemoryIngestOptions): Promise<void> {
     }
     logger.newline();
     return;
+  }
+
+  // Safety: scan all node content for secrets before ingestion
+  const allContent = rawResult.nodes.map(n => n.content).join('\n---\n');
+  const candidates = scan(allContent);
+  if (candidates.length > 0) {
+    const decisions = await runSanitizeReview(candidates);
+    const approved = decisions.filter(d => d.decision === 'redact').map(d => d.candidate);
+
+    if (approved.length > 0) {
+      // Apply redactions to each node's content
+      for (const node of rawResult.nodes) {
+        const nodeCandidates = approved.filter(c => node.content.includes(c.match));
+        if (nodeCandidates.length > 0) {
+          node.content = apply(node.content, nodeCandidates);
+        }
+      }
+    }
+
+    // Log audit decisions
+    const auditPath = path.join(options.dir, '.sdd', 'sanitize-audit.jsonl');
+    const auditEntries: AuditEntry[] = decisions.map(d => ({
+      ts: new Date().toISOString(),
+      change: options.change,
+      patternId: d.candidate.patternId,
+      matchHash: require('crypto').createHash('sha256').update(d.candidate.match).digest('hex'),
+      decision: d.decision,
+      user: 'interactive',
+    }));
+    logDecisions(auditPath, auditEntries);
   }
 
   const spinner = ora({ text: 'Ingesting into memory graph...', color: 'magenta' }).start();

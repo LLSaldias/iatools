@@ -3,9 +3,13 @@
  * Registers all top-level commands and subcommands.
  */
 
+import { runCompress } from '@/commands/compress';
 import { runInit } from '@/commands/init';
 import { runMemoryExport } from '@/commands/memory-export';
 import { runMemoryIngest } from '@/commands/memory-ingest';
+import { runMemoryQuery } from '@/commands/memory-query';
+import { runReview } from '@/commands/review';
+import { runTrace } from '@/commands/trace';
 import { runUpdate } from '@/commands/update';
 import { Command } from 'commander';
 import * as path from 'path';
@@ -88,6 +92,60 @@ memoryCmd
     });
   });
 
+memoryCmd
+  .command('query <text>')
+  .description('🔍  Search memory with hybrid retrieval')
+  .option('--dir <path>', 'target project directory', process.cwd())
+  .option('--max <n>', 'max results', '20')
+  .action(async (text: string, options: { dir: string; max: string }) => {
+    await runMemoryQuery({
+      query: text,
+      dir: path.resolve(options.dir),
+      maxResults: parseInt(options.max, 10),
+    });
+  });
+
+program
+  .command('trace')
+  .description('🔗  Trace decision lineage for a change')
+  .requiredOption('--change <name>', 'change name')
+  .option('--item <id>', 'specific item ID to trace')
+  .option('--dir <path>', 'target project directory', process.cwd())
+  .action(async (options: { change: string; item?: string; dir: string }) => {
+    await runTrace({
+      change: options.change,
+      item: options.item,
+      dir: path.resolve(options.dir),
+    });
+  });
+
+program
+  .command('review <phase>')
+  .description('📖  Decompress and review a .cave artifact')
+  .requiredOption('--change <name>', 'change name')
+  .option('--dir <path>', 'target project directory', process.cwd())
+  .action(async (phase: string, options: { change: string; dir: string }) => {
+    await runReview({
+      phase,
+      change: options.change,
+      dir: path.resolve(options.dir),
+    });
+  });
+
+program
+  .command('compress')
+  .description('📦  Compress .md artifacts to .cave format')
+  .requiredOption('--change <name>', 'change name')
+  .option('--phase <phase>', 'specific phase to compress')
+  .option('--dir <path>', 'target project directory', process.cwd())
+  .action(async (options: { change: string; phase?: string; dir: string }) => {
+    await runCompress({
+      change: options.change,
+      phase: options.phase,
+      dir: path.resolve(options.dir),
+    });
+  });
+
 program.addHelpText(
   'after',
   `
@@ -104,5 +162,19 @@ program.addHelpText(
                        Example: /sdd-archive
   /sdd-explore [topic] Explore ideas before committing
                        Example: /sdd-explore refactoring-db
+
+🛠️  Pipeline Commands:
+  trace                Trace decision lineage across .cave artifacts
+                       Example: iatools trace --change my-feature --item T1
+  review <phase>       Decompress and display a .cave artifact
+                       Example: iatools review proposal --change my-feature
+  compress             Compress .md artifacts to .cave format
+                       Example: iatools compress --change my-feature
+
+🧠  Memory Commands:
+  memory query <text>  Search memory with hybrid retrieval
+                       Example: iatools memory query "authentication flow"
+  memory ingest        Ingest extraction JSON into memory graph
+  memory export        Export memory graph to JSON
 `
 );
