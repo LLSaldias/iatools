@@ -5,7 +5,7 @@
  */
 
 import Database from 'better-sqlite3';
-import type { MemoryNode, MemoryEdge } from './types';
+import type { MemoryEdge, MemoryNode } from './types';
 
 /** SQL schema for the knowledge graph database */
 const SCHEMA_SQL = `
@@ -53,6 +53,17 @@ const SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_id);
 `;
 
+/** SQL migration for the vectors table (v2 embeddings) */
+const VECTORS_SCHEMA_SQL = `
+  CREATE TABLE IF NOT EXISTS vectors (
+    node_id    TEXT PRIMARY KEY REFERENCES nodes(id) ON DELETE CASCADE,
+    embedding  BLOB NOT NULL,
+    model      TEXT NOT NULL,
+    dim        INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`;
+
 /**
  * Memory database manager providing CRUD operations over the knowledge graph.
  * Uses better-sqlite3 for synchronous, zero-config SQLite access with FTS5.
@@ -78,6 +89,7 @@ export class MemoryDB {
     this.db.pragma('journal_mode = WAL');
     this.db.pragma('foreign_keys = ON');
     this.db.exec(SCHEMA_SQL);
+    this.db.exec(VECTORS_SCHEMA_SQL);
   }
 
   /**
@@ -187,6 +199,50 @@ export class MemoryDB {
   transaction<T>(fn: () => T): T {
     const wrapped = this.db.transaction(fn);
     return wrapped();
+  }
+
+  /**
+   * Store a vector embedding for a node.
+   * @param {string} nodeId - ID of the node to attach the vector to.
+   * @param {Buffer} embedding - Serialized embedding data.
+   * @param {string} model - Name of the embedding model used.
+   * @param {number} dim - Dimensionality of the embedding.
+   */
+  storeVector(nodeId: string, embedding: Buffer, model: string, dim: number): void {
+    const stmt = this.db.prepare(
+      'INSERT OR REPLACE INTO vectors (node_id, embedding, model, dim) VALUES (?, ?, ?, ?)'
+    );
+    stmt.run(nodeId, embedding, model, dim);
+  }
+
+  /**
+   * Retrieve the stored vector for a node.
+   * @param {string} nodeId - ID of the node.
+   * @returns {{ embedding: Buffer; model: string; dim: number } | null} Vector data or null if not found.
+   */
+  getVector(nodeId: string): { embedding: Buffer; model: string; dim: number } | null {
+    const row = this.db.prepare(
+      'SELECT embedding, model, dim FROM vectors WHERE node_id = ?'
+    ).get(nodeId) as { embedding: Buffer; model: string; dim: number } | undefined;
+    return row ?? null;
+  }
+
+  /**
+   * Retrieve all stored vectors.
+   * @returns {Array<{ node_id: string; embedding: Buffer; model: string; dim: number }>} All vectors.
+   */
+  getAllVectors(): Array<{ node_id: string; embedding: Buffer; model: string; dim: number }> {
+    return this.db.prepare(
+      'SELECT node_id, embedding, model, dim FROM vectors'
+    ).all() as Array<{ node_id: string; embedding: Buffer; model: string; dim: number }>;
+  }
+
+  /**
+   * Delete the vector embedding for a node.
+   * @param {string} nodeId - ID of the node.
+   */
+  deleteVector(nodeId: string): void {
+    this.db.prepare('DELETE FROM vectors WHERE node_id = ?').run(nodeId);
   }
 
   /**
