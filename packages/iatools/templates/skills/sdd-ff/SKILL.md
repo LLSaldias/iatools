@@ -45,7 +45,11 @@ proposal.md  →  specs/  →  design.md  →  tasks.md
    - Covers all requirements from specs
    - Update `.openspec.yaml` → `tasks: done`
 
-7. **Announce completion**:
+7. **Compress artifacts** (optional, recommended for large changes):
+   - Run `iatools compress --change <name>` to create `.cave` versions
+   - This saves 65-75% tokens when agents read planning artifacts
+
+8. **Announce completion**:
    ```
    ✓ proposal.md
    ✓ specs/<domain>/spec.md
@@ -54,6 +58,7 @@ proposal.md  →  specs/  →  design.md  →  tasks.md
    
    All planning artifacts complete!
    Run /sdd-apply to begin implementation.
+   Tip: Run `iatools compress --change <name>` to save tokens.
    ```
 
 ## Rules

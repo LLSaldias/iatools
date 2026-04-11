@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.0.0] - 2026-04-11
+
+### Added
+- **Safety Layer**: Regex-based secret/PII scanner with 9 built-in patterns (AWS keys, JWTs, connection strings, emails, etc.). Interactive sanitization review with diff view before memory ingestion. JSONL audit log with SHA-256 hashed matches (never stores cleartext secrets).
+- **Memory Embeddings**: Hybrid retrieval combining FTS5 + vector similarity + knowledge graph traversal via Reciprocal Rank Fusion (RRF, k=60). Supports OpenAI and Vertex AI embedding APIs with optional local ONNX fallback (`onnxruntime-node`).
+- **Caveman Pipeline**: `.cave` compressed artifact format for 65-75% token savings in agent-to-agent communication. Code blocks, URLs, and file paths preserved verbatim. Full compress/decompress round-trip with structured YAML.
+- **Decision Traceability**: Lineage tracking across SDD artifacts — trace any task, requirement, or decision back through the full proposal → specs → design → tasks chain.
+- **Premium Terminal UI**: Themed panels (boxen), styled tables (cli-table3), progress bars, diff views, and interactive screens for sanitization review and memory query results. TTY-aware with graceful CI fallback.
+- **`iatools memory query <text>`**: New command for hybrid memory search with interactive result selection.
+- **`iatools trace --change <name>`**: New command to visualize decision lineage across SDD artifacts.
+- **`iatools review <phase> --change <name>`**: New command to decompress and display `.cave` artifacts.
+- **`iatools compress --change <name>`**: New command to convert `.md` artifacts to `.cave` format with token savings report.
+- **Sanitization wired into `memory ingest`**: Automatic secret scanning before ingestion with interactive review.
+
+### Changed
+- **SDD skill templates**: Updated `sdd-apply`, `sdd-ff`, `sdd-archive`, `sdd-verify` skills with caveman format awareness, safety gates, and new CLI commands.
+- **Agent constitution template**: Added caveman mode section and sanitization quality gate.
+- **CLI help text**: Updated with all new commands and usage examples.
+
+### Architecture
+- **Layered Core**: New 4-layer architecture with strict dependency direction: UI → Pipeline → Memory → Safety (leaf). All layers are internal to the single `@lsframework/iatools` package.
+
 ## [1.6.0] - 2026-04-08
 
 ### Added

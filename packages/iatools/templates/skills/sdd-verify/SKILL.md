@@ -17,6 +17,7 @@ Check that the implementation matches what was specified. Surfaces issues before
 | **Completeness** | All tasks checked, all requirements implemented, all scenarios covered |
 | **Correctness** | Implementation matches spec intent, edge cases handled |
 | **Coherence** | Design decisions reflected in code, naming consistent, no drift |
+| **Safety** | No secrets/PII in memory DB, sanitization review completed |
 
 ## Steps
 

@@ -18,11 +18,12 @@ Work through the implementation checklist in `tasks.md`, writing code and checki
 
 1. **Identify the change** from the argument or context.
 
-2. **Read context files** in this order:
-   - `tasks.md` — the implementation checklist
-   - `design.md` — technical approach reference
+2. **Read context files** in this order (prefer `.cave` if available for token savings):
+   - `tasks.md` / `tasks.cave` — the implementation checklist
+   - `design.md` / `design.cave` — technical approach reference
    - `specs/` — requirements and scenarios
-   - `proposal.md` — intent and scope
+   - `proposal.md` / `proposal.cave` — intent and scope
+   - To decompress a `.cave` file: `iatools review <phase> --change <name>`
 
 3. **Find the first unchecked task** `- [ ]`.
 

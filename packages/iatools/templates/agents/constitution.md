@@ -29,6 +29,15 @@ All work follows the SDD lifecycle:
 - `verify`: Validate implementation vs. all artifacts  
 - `archive`: Merge delta specs into `openspec/specs/`  
 
+### Caveman Mode (.cave format)
+
+SDD artifacts can be compressed to `.cave` format for 65-75% token savings in agent-to-agent communication:
+
+- `iatools compress --change <name>` — convert `.md` artifacts to `.cave`
+- `iatools review <phase> --change <name>` — decompress and review a `.cave` artifact
+- `.cave` files use structured YAML with abbreviated keys; code blocks and URLs are preserved verbatim
+- Both `.md` and `.cave` formats are valid; agents should prefer `.cave` when available  
+
 ---
 
 ## 2. Coding Standards
@@ -62,6 +71,7 @@ All coding work must follow the rules in `copilot-instructions.md` at the projec
 - [ ] `npm run lint` passes clean
 - [ ] `npm run dependency-check` passes
 - [ ] `/sdd-verify` reports zero CRITICAL issues
+- [ ] `iatools memory ingest` sanitization review completed (no secrets in memory DB)
 
 ---
 

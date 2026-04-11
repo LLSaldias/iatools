@@ -31,9 +31,14 @@ Complete the SDD lifecycle for a change. Merge its delta specs into the main `op
    openspec/changes/<name>/  →  openspec/changes/archive/<YYYY-MM-DD>-<name>/
    ```
 
-5. **Confirm**:
+5. **Ingest into memory** (if `.sdd/memory.db` exists):
+   - Run `iatools memory ingest --change <name>` to extract and persist knowledge
+   - Review sanitization candidates before confirming ingestion
+
+6. **Confirm**:
    ```
    ✓ Delta specs merged into openspec/specs/
+   ✓ Knowledge ingested into project memory
    ✓ Archived to openspec/changes/archive/<date>-<name>/
    
    Ready for the next change!
