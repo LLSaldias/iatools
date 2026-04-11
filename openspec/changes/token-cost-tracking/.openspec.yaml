@@ -1,0 +1,9 @@
+schema: spec-driven
+change: token-cost-tracking
+created: 2026-04-10
+status: planning
+artifacts:
+  proposal: done
+  specs: done
+  design: done
+  tasks: done

@@ -25,3 +25,18 @@ artifacts:
     depends_on: [specs, design]
     apply_required: true
     description: "Implementation checklist with numbered, checkbox tasks"
+
+# Optional root-level key in .openspec.yaml, populated automatically at archive time.
+# Contains per-artifact word counts and estimated token counts (words × 1.33).
+# Structure:
+#   stats:
+#     {artifact-key}:
+#       words: <int>
+#       tokens: <int>
+#     total:
+#       words: <int>
+#       tokens: <int>
+stats:
+  optional: true
+  populated_by: sdd-archive
+  description: "Per-artifact word and token counts, written at archive time"
