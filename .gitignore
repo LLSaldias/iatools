@@ -85,4 +85,6 @@ packages/*/docs
 yarn-error.log
 **/.agent
 **/.agents
+bun.lockpackage-lock.json
+.nx/
 bun.lock
