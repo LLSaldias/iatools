@@ -1,5 +1,5 @@
 ---
-description: Explora ideas antes de comprometerte con un cambio
+description: Explore ideas before committing to a change
 ---
 # Workflow: SDD Explore
 

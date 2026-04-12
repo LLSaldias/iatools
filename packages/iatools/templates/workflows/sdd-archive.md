@@ -1,5 +1,5 @@
 ---
-description: Archiva un cambio completado y mueve los artefactos
+description: Archive a completed change and move the artifacts
 ---
 # Workflow: SDD Archive
 

@@ -13,7 +13,7 @@
 |----|------------|-------------------|
 | SAF-1 | Built-in regex patterns detect common secrets/PII | AWS keys, JWTs, generic secrets, private keys, connection strings, emails, IPs, ARNs all detected |
 | SAF-2 | User-configurable patterns via `.sdd/sanitize.yaml` | Custom patterns loaded, `ignore` list suppresses built-ins |
-| SAF-3 | Interactive review before any redaction | Ink screen shows each candidate with context, user approves/rejects individually |
+| SAF-3 | Interactive review before any redaction | Inquirer prompts show each candidate with context, user approves/rejects individually |
 | SAF-4 | Audit trail of all sanitization decisions | `.sdd/sanitize-audit.jsonl` with timestamp, pattern, hash (never cleartext), decision |
 | SAF-5 | No unsanitized content reaches memory DB or embeddings | Sanitization runs before persist and before embed — hard ordering |
 
@@ -37,7 +37,7 @@
 | MEM-1 | Provider chain: API → ONNX → BM25 | Falls through gracefully; logs once when degrading |
 | MEM-2 | `vectors` table stores one embedding per node | Schema migration adds table non-destructively on first run |
 | MEM-3 | Hybrid retrieval with RRF ranking | FTS5 + vector + graph results fused into single ranked list |
-| MEM-4 | `iatools memory query` renders interactive results | Ink table with scores, node details on expand, select-to-export |
+| MEM-4 | `iatools memory query` renders interactive results | Styled cli-table3 with scores, node details on expand, select-to-export |
 | MEM-5 | ONNX is optional peer dependency | Users without ONNX get BM25-only; no install-time error |
 | MEM-6 | Embeddings generated after sanitization | Vector content is always sanitized |
 
@@ -74,7 +74,7 @@
 | CAV-SC1 | Standard 500-token proposal.md | `iatools compress` | Produces proposal.cave with ≤150 tokens |
 | CAV-SC2 | proposal.cave exists | Agent runs sdd-spec | Reads `.cave`, outputs specs.cave with `_parent: proposal.cave` |
 | CAV-SC3 | design.cave with code block | Compression | Code block preserved verbatim |
-| CAV-SC4 | User runs `iatools review proposal --change X` | Decompression | Readable .md rendered in Ink panel |
+| CAV-SC4 | User runs `iatools review proposal --change X` | Decompression | Readable .md rendered in themed panel |
 
 ---
 
@@ -106,18 +106,18 @@
 
 | ID | Requirement | Acceptance Criteria |
 |----|------------|-------------------|
-| UI-1 | Ink-based rendering for all interactive commands | Panel, Table, SelectInput, DiffView, Banner components |
+| UI-1 | Themed terminal rendering with chalk/boxen/cli-table3 | Panel, Table, DiffView, Banner components via chalk+boxen |
 | UI-2 | Theme system with consistent brand colors | Purple primary, round borders, configurable spacing |
 | UI-3 | Graceful fallback for non-TTY environments | CI/piped mode uses chalk logger, same information |
-| UI-4 | `init` wizard uses Ink multi-select with keyboard nav | Space toggle, Enter confirm, arrow navigate |
-| UI-5 | Memory query results as interactive table | Expand details, select for export, keyboard-driven |
-| UI-6 | Sanitization review as Ink DiffView | One candidate at a time, context window, approve/reject keybinds |
+| UI-4 | `init` wizard uses Inquirer multi-select with checkbox prompts | Space toggle, Enter confirm, arrow navigate |
+| UI-5 | Memory query results as styled table with inquirer selection | cli-table3 display, select for export via inquirer |
+| UI-6 | Sanitization review as styled diff view with inquirer prompts | One candidate at a time, context window, approve/reject via inquirer |
 
 ### Scenarios
 
 | ID | Given | When | Then |
 |----|-------|------|------|
-| UI-SC1 | TTY terminal | `iatools init` | Ink Banner + Panel with multi-select rendered |
+| UI-SC1 | TTY terminal | `iatools init` | Branded banner + themed panel with multi-select rendered |
 | UI-SC2 | Piped output (`iatools init \| cat`) | `iatools init` | Chalk fallback, same prompts in plain text |
-| UI-SC3 | User presses Space on IDE option | InitScreen | Option toggled, visual feedback immediate |
-| UI-SC4 | Memory query returns 5 results | QueryScreen | Table with Score, Type, Title, Source columns; arrow keys navigate |
+| UI-SC3 | User toggles checkbox on IDE option | Init wizard | Option toggled, visual feedback immediate |
+| UI-SC4 | Memory query returns 5 results | Query command | Styled table with Score, Type, Title, Source columns; inquirer selection |

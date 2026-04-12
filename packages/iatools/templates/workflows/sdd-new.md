@@ -1,5 +1,5 @@
 ---
-description: Inicia un nuevo cambio SDD y crea la estructura base
+description: Start a new SDD change and create the base structure
 ---
 # Workflow: SDD New
 

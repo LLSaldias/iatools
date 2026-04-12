@@ -10,7 +10,7 @@ Transform iatools from an SDD bootstrapper into a **must-have tool** for spec-dr
 
 | Feature | What | Why |
 |---------|------|-----|
-| **Premium CLI UX** | Ink (React for terminal) — panels, interactive widgets, theming | First impressions drive adoption; current chalk+inquirer feels basic |
+| **Premium CLI UX** | chalk/boxen/cli-table3 — themed panels, styled tables, diff views | First impressions drive adoption; polished themed UI with interactive inquirer prompts |
 | **Caveman SDD Mode** | Compressed `.cave` artifact format for agent-to-agent communication | SDD artifacts are the main token cost; ~74% savings per change cycle |
 | **Decision Traceability** | Linked artifact chain with lineage metadata | Makes iatools "sticky" — full audit trail of why decisions were made |
 | **Sanitization** | Regex-based PII/secret detection with interactive review | Compliance requirement — users can't trust memory without it |
@@ -36,7 +36,7 @@ No multi-package overhead. Optional heavy deps (ONNX) lazy-loaded. Each layer ow
 
 | Decision | Rationale |
 |----------|-----------|
-| Ink over blessed/neo-blessed | Composable React model, active ecosystem, ink-select-input/ink-table mature |
+| chalk/boxen over Ink — simpler dependency tree, CI-safe, no JSX toolchain needed | Mature ecosystem, zero-config, works in all terminal environments |
 | `.cave` as YAML, not binary | Git-diffable, agent-readable without tooling, human-debuggable |
 | `.cave` is source of truth, `.md` derived | Agents are primary consumers; humans review on-demand |
 | Regex sanitization over ML classification | Zero external deps, deterministic, auditable |
@@ -50,9 +50,9 @@ No multi-package overhead. Optional heavy deps (ONNX) lazy-loaded. Each layer ow
 | Area | Impact |
 |------|--------|
 | `src/` structure | Reorganized into `ui/`, `pipeline/`, `memory/`, `safety/` layers |
-| `package.json` | New deps: ink, ink-select-input, ink-table, ink-spinner, react; optional peer: onnxruntime-node |
-| `src/utils/logger.ts` | Becomes thin shim delegating to Ink or chalk (CI fallback) |
-| `src/commands/init.ts` | Refactored to use Ink `InitScreen` |
+| `package.json` | New deps: chalk, boxen, cli-table3, inquirer, ora, figures; optional peer: onnxruntime-node |
+| `src/utils/logger.ts` | Becomes thin shim delegating to styled or plain chalk (CI fallback) |
+| `src/commands/init.ts` | Refactored to use themed UI with inquirer prompts |
 | `src/memory/` | Extended with `embeddings/` sub-module and `vector-store.ts` |
 | `templates/skills/` | SDD skills get caveman instruction block |
 | `templates/agents/constitution.md` | Gets caveman-sdd schema reference |
@@ -65,7 +65,6 @@ No multi-package overhead. Optional heavy deps (ONNX) lazy-loaded. Each layer ow
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Ink adds ~2MB to install size | Certain | Acceptable tradeoff for UX quality |
 | `.cave` format not adopted by third-party SDD tools | Medium | `.md` always generated at review gates; `.cave` is internal optimization |
 | ONNX model download fails on first use | Low | Clear error message + graceful BM25 fallback |
 | Regex sanitization false positives | Medium | Interactive review + user-configurable ignore rules |
@@ -74,20 +73,20 @@ No multi-package overhead. Optional heavy deps (ONNX) lazy-loaded. Each layer ow
 ## Rollback Plan
 
 Each feature is independently deployable. If a specific layer causes issues:
-- Ink: fall back to chalk+inquirer (logger shim handles this)
+- UI: chalk/boxen stack has no heavy deps to roll back; already the simpler approach
 - Caveman: agents read `.md` files (always generated)
 - Embeddings: BM25-only retrieval works without vectors table
 - Sanitization: skip scan if `.sdd/sanitize.yaml` absent
 
 ## Dependencies
 
-- ink ^5.0, react ^18 (UI layer)
+- chalk, boxen, cli-table3, inquirer, ora, figures (UI layer)
 - onnxruntime-node ^1.17 (optional peer dep)
-- Existing: better-sqlite3, commander, chalk, inquirer, fs-extra
+- Existing: better-sqlite3, commander, fs-extra
 
 ## Success Criteria
 
-- [ ] `iatools init` renders with Ink panels and interactive multi-select
+- [ ] `iatools init` renders with themed panels and interactive multi-select
 - [ ] `/sdd-ff` produces `.cave` artifacts with ~70%+ token savings vs `.md`
 - [ ] Every `.cave` artifact carries `_parent` traceability link
 - [ ] Memory ingestion scans for secrets and presents interactive review

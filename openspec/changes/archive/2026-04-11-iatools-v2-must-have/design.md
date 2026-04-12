@@ -11,8 +11,8 @@ Single package, 4 internal layers. Dependency direction: top → down, never up.
 
 ```
 ┌─────────────────────────────────────────────┐
-│  UI Layer (Ink)                              │
-│  Panels, interactive widgets, theming        │
+│  UI Layer (chalk/boxen/cli-table3)            │
+│  Panels, interactive widgets, theming          │
 ├─────────────────────────────────────────────┤
 │  Pipeline Layer                              │
 │  Caveman compression, artifact flow,         │
@@ -36,18 +36,12 @@ src/
 │
 ├── ui/                               # UI Layer
 │   ├── theme.ts                      # Color palette, box styles, spacing tokens
-│   ├── components/
-│   │   ├── Panel.tsx                 # Bordered panel with title + status icon
-│   │   ├── Table.tsx                 # Column-aligned data table
-│   │   ├── DiffView.tsx              # Side-by-side before/after
-│   │   ├── SelectInput.tsx           # Fuzzy multi-select with keyboard nav
-│   │   ├── ProgressBar.tsx           # Determinate progress
-│   │   └── Banner.tsx                # Replaces current chalk box
-│   └── screens/
-│       ├── InitScreen.tsx            # init wizard
-│       ├── IngestScreen.tsx          # memory ingest with live preview
-│       ├── QueryScreen.tsx           # memory query results
-│       └── SanitizeReview.tsx        # Interactive redaction approval
+│   ├── banner.ts                     # Branded banner with boxen
+│   ├── panel.ts                      # Bordered panel with title + status icon
+│   ├── table.ts                      # Column-aligned data table via cli-table3
+│   ├── diff-view.ts                  # Styled before/after diff
+│   ├── progress.ts                   # Determinate progress via ora
+│   └── prompts.ts                    # Inquirer-based interactive prompts
 │
 ├── pipeline/                         # Pipeline Layer
 │   ├── caveman/
@@ -82,7 +76,7 @@ src/
 ├── commands/                         # Existing commands (refactored)
 ├── ides/                             # Existing (unchanged)
 ├── roles/                            # Existing (unchanged)
-└── utils/                            # logger.ts becomes Ink/chalk shim
+└── utils/                            # logger.ts becomes chalk shim
 ```
 
 ### Dependency Rules
@@ -92,7 +86,7 @@ src/
 - `memory/` → calls `safety/` (sanitize before persist)
 - `safety/` → calls nothing (leaf layer)
 - `commands/` → calls `pipeline/`, `memory/`
-- TSX stays in `ui/` only — no React leaks into other layers
+- UI utilities stay in `ui/` only — no UI leaks into other layers
 
 ---
 
@@ -307,7 +301,7 @@ _meta:
 iatools trace --change my-feature --item T1
 ```
 
-Renders in Ink as a tree panel showing the full lineage from task → requirement → decision → risk → proposal.
+Renders as a styled tree panel showing the full lineage from task → requirement → decision → risk → proposal.
 
 ---
 
@@ -356,7 +350,7 @@ ignore:
 ```
 scanner.scan(text) → RedactionCandidate[]
   → sort by severity (critical first)
-  → render in Ink SanitizeReview screen
+  → render in styled SanitizeReview prompts
   → user approves/rejects per candidate
   → redactor.apply(text, approvedCandidates) → sanitized text
   → audit.log(decisions) → .sdd/sanitize-audit.jsonl
@@ -471,7 +465,7 @@ function fuseResults(
 iatools memory query "rate limiting decisions"
 ```
 
-Renders in Ink as interactive table. User selects which nodes to inject into agent context. No autonomous injection.
+Renders as a styled interactive table. User selects which nodes to inject into agent context. No autonomous injection.
 
 ### Backward Compatibility
 
@@ -482,15 +476,16 @@ Renders in Ink as interactive table. User selects which nodes to inject into age
 
 ---
 
-## 6. Premium CLI UX (Ink)
+## 6. Premium CLI UX (chalk/boxen/cli-table3)
 
 ### Technology
 
-- **ink ^5.0** + **react ^18** — React for terminal
-- **ink-select-input** — fuzzy multi-select
-- **ink-table** — column-aligned tables
-- **ink-spinner** — animated spinners
-- **ink-text-input** — text fields
+- **chalk** — styled terminal output
+- **boxen** — bordered boxes and panels
+- **cli-table3** — column-aligned tables
+- **inquirer** — interactive prompts and multi-select
+- **ora** — animated spinners
+- **figures** — unicode symbols
 
 ### Theme System
 
@@ -554,8 +549,8 @@ export const theme = {
 const isInteractive = process.stdout.isTTY && !process.env.CI;
 
 export const logger = isInteractive
-  ? inkLogger      // Ink-rendered output
-  : chalkLogger;   // Current chalk fallback (CI, piped output)
+  ? styledLogger   // chalk/boxen-rendered output
+  : plainLogger;   // Plain chalk fallback (CI, piped output)
 ```
 
 ### Screen Architecture
@@ -564,9 +559,9 @@ Each command maps to a screen:
 
 | Command | Screen | Key interactions |
 |---------|--------|-----------------|
-| `init` | InitScreen | Multi-select IDE/roles, confirmation panel |
-| `memory ingest` | IngestScreen | Progress bar, sanitization review inline |
-| `memory query` | QueryScreen | Results table, node detail expand, select for export |
+| `init` | InitScreen | Multi-select IDE/roles via inquirer, confirmation panel |
+| `memory ingest` | IngestScreen | Progress bar via ora, sanitization review inline |
+| `memory query` | QueryScreen | Results table via cli-table3, node detail expand, select for export |
 | `trace` | TraceScreen | Tree view of lineage DAG |
 
 ---
@@ -575,8 +570,8 @@ Each command maps to a screen:
 
 | Command | Description |
 |---------|-------------|
-| `iatools init` | Existing — refactored to Ink |
-| `iatools update` | Existing — refactored to Ink |
+| `iatools init` | Existing — refactored to themed UI |
+| `iatools update` | Existing — refactored to themed UI |
 | `iatools memory export` | Existing — add `--no-vectors` flag |
 | `iatools memory ingest` | Existing — add sanitization step |
 | `iatools memory query <text>` | **New** — hybrid retrieval with interactive results |
@@ -595,7 +590,7 @@ Each layer gets its own test suite:
 | `safety/` | Pattern matching accuracy, false positive rates | Unit tests with known-good/known-bad inputs |
 | `memory/` | Embedding provider chain, RRF ranking, migration | Unit + integration with test SQLite DB |
 | `pipeline/` | .cave schema validation, compress/decompress round-trip, lineage integrity | Unit tests |
-| `ui/` | Component rendering, keyboard interactions | ink-testing-library snapshots |
+| `ui/` | Component rendering, prompt interactions | Unit tests with mock stdin/stdout |
 
 **Coverage target:** ≥80% line + branch (per coding standards).
 

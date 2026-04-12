@@ -1,5 +1,5 @@
 ---
-description: Implementa cambios basados en especificaciones técnicas
+description: Implement changes based on technical specifications
 ---
 # Workflow: SDD Apply
 

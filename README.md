@@ -1,179 +1,179 @@
 # ls-framework
 
-Framework agéntico y repositorio de librerías para desarrollo con IA.
+Agentic framework and library repository for AI-driven development.
 
-## 🤖 El Framework Agéntico
+## 🤖 The Agentic Framework
 
-Este repositorio implementa un entorno de trabajo basado en **Spec-Driven Development (SDD)**, utilizando agentes de IA para acelerar el desarrollo siguiendo estándares de arquitectura rigurosos.
+This repository implements a working environment based on **Spec-Driven Development (SDD)**, using AI agents to accelerate development while following rigorous architecture standards.
 
-### 🛠️ Herramienta CLI: `iatools`
+### 🛠️ CLI Tool: `iatools`
 
-La herramienta central es `@lsframework/iatools`, que permite inicializar y gestionar el entorno agéntico en cualquier proyecto.
+The core tool is `@lsframework/iatools`, which allows you to initialize and manage the agentic environment in any project.
 
-Se recomienda ejecutarla directamente mediante `bunx` para asegurar el uso de la última versión:
+It is recommended to run it directly via `bunx` to ensure you're using the latest version:
 
 ```bash
 bunx @lsframework/iatools init
 ```
 
-#### Operaciones Principales
+#### Main Operations
 
--   **`iatools init`**: Inicia un asistente interactivo para configurar el framework. Instala los agentes, las habilidades y los flujos de trabajo necesarios según tu rol e IDE.
--   **`iatools update`**: Refresca las habilidades y flujos de trabajo desde las plantillas más recientes, manteniendo tu entorno actualizado.
--   **`iatools skills add <url> --skill <id>`**: Permite instalar habilidades externas desde repositorios de GitHub.
--   **`iatools memory export`**: Exporta el grafo de conocimiento de `.sdd/memory.db` a `.sdd/memory.json` para Git.
-
----
-
-### 🚀 Ciclo de Trabajo: SDD (Spec-Driven Development)
-
-El flujo de trabajo SDD permite que los agentes implementen cambios basándose en especificaciones técnicas. Los comandos se ejecutan mediante "slash commands" en el chat del agente:
-
-1.  **`/sdd-new <nombre-del-cambio>`**: Inicia un nuevo cambio, creando la estructura en `openspec/changes/`.
-2.  **`/sdd-ff` (Fast-Forward)**: Genera automáticamente los artefactos de planificación (propuesta, especificaciones, diseño y tareas).
-3.  **`/sdd-apply`**: Implementa las tareas una a una, escribiendo el código necesario.
-4.  **`/sdd-verify`**: Valida la implementación contra las especificaciones y el diseño.
-5.  **`/sdd-archive`**: Archiva el cambio completado, integrando las especificaciones en la "source of truth".
+-   **`iatools init`**: Launches an interactive wizard to configure the framework. Installs the necessary agents, skills, and workflows based on your role and IDE.
+-   **`iatools update`**: Refreshes skills and workflows from the latest templates, keeping your environment up to date.
+-   **`iatools skills add <url> --skill <id>`**: Installs external skills from GitHub repositories.
+-   **`iatools memory export`**: Exports the knowledge graph from `.sdd/memory.db` to `.sdd/memory.json` for Git.
 
 ---
 
-### ⏸️ Human Layers y Handoff
+### 🚀 Workflow Cycle: SDD (Spec-Driven Development)
 
-A medida que las tareas agénticas se vuelven más complejas, es posible que el agente necesite pausar, delegar contexto a un humano u otro agente, y luego continuar. Para esto, el framework provee habilidades nativas:
+The SDD workflow allows agents to implement changes based on technical specifications. Commands are executed via "slash commands" in the agent chat:
 
-1. **`/create-handoff`**: Instruye al agente para crear un documento de "handoff" consolidado (estado, cambios, pendientes y bloqueos).
-2. **`/iterate-plan`**: Permite iterar sobre planes de implementación existentes con investigación y validación.
-3. **Reanudación**: Para continuar el trabajo, inicia una nueva sesión y menciona el archivo de handoff generado (ej. *"Lee handoffs/archivo.md y continuemos"*).
+1.  **`/sdd-new <change-name>`**: Starts a new change, creating the structure in `openspec/changes/`.
+2.  **`/sdd-ff` (Fast-Forward)**: Automatically generates planning artifacts (proposal, specifications, design, and tasks).
+3.  **`/sdd-apply`**: Implements tasks one by one, writing the necessary code.
+4.  **`/sdd-verify`**: Validates the implementation against the specifications and design.
+5.  **`/sdd-archive`**: Archives the completed change, integrating the specifications into the "source of truth".
 
 ---
 
-## 🏗️ Estructura del Proyecto
+### ⏸️ Human Layers and Handoff
+
+As agentic tasks become more complex, the agent may need to pause, delegate context to a human or another agent, and then resume. For this, the framework provides native skills:
+
+1. **`/create-handoff`**: Instructs the agent to create a consolidated "handoff" document (status, changes, pending items, and blockers).
+2. **`/iterate-plan`**: Allows iterating on existing implementation plans with research and validation.
+3. **Resumption**: To continue work, start a new session and reference the generated handoff file (e.g., *"Read handoffs/file.md and let's continue"*).
+
+---
+
+## 🏗️ Project Structure
 
 ```
 .
-├── openspec/           # Especificaciones del sistema (Source of Truth)
-│   ├── specs/          # Arquitectura, API, persistencia, etc.
-│   └── changes/        # Historial de cambios realizados mediante SDD
-├── .agents/            # Configuración de agentes, habilidades y flujos
-└── packages/           # Librerías del monorepo (Lerna)
-    └── iatools/        # CLI de SDD framework
+├── openspec/           # System specifications (Source of Truth)
+│   ├── specs/          # Architecture, API, persistence, etc.
+│   └── changes/        # History of changes made via SDD
+├── .agents/            # Agent, skill, and workflow configuration
+└── packages/           # Monorepo libraries (Lerna)
+    └── iatools/        # SDD framework CLI
 ```
 
-## 📦 Stack Tecnológico
+## 📦 Tech Stack
 
 -   **Runtime**: [Node.js 20.x](https://nodejs.org/docs/latest-v20.x/api/) + [TypeScript](https://www.typescriptlang.org/docs)
 -   **Package Manager**: [Bun](https://bun.sh/)
--   **Gestión de Monorepo**: [Lerna](https://lerna.js.org/) (modo `independent`)
+-   **Monorepo Management**: [Lerna](https://lerna.js.org/) (`independent` mode)
 
 ---
 
-## 🧑‍💻 Desarrollo Local
+## 🧑‍💻 Local Development
 
-### Requisitos Previos
+### Prerequisites
 
 ```bash
-node -v   # >= 20.x (ver .nvmrc)
-nvm use   # si usás nvm
+node -v   # >= 20.x (see .nvmrc)
+nvm use   # if using nvm
 ```
 
-### Instalación
+### Installation
 
 ```bash
-# Clonar e instalar dependencias (workspaces)
+# Clone and install dependencies (workspaces)
 git clone <repo-url>
 cd ls-framework
 bun install
 ```
 
-### Compilar
+### Build
 
 ```bash
-# Compilar todos los paquetes del monorepo
+# Build all monorepo packages
 bun run compile
 
-# Compilar solo iatools
+# Build only iatools
 cd packages/iatools && bun run compile
 ```
 
 ### Tests
 
 ```bash
-# Ejecutar todos los tests
+# Run all tests
 bun run test
 
-# Solo iatools
+# Only iatools
 cd packages/iatools && bun run test
 ```
 
 ### Lint
 
 ```bash
-bun run lint        # Ver errores
+bun run lint        # Show errors
 bun run fix         # Auto-fix
 ```
 
 ---
 
-## 🔄 Actualizar Versión y Probar Localmente
+## 🔄 Version Bumping and Local Testing
 
-### 1. Bump de versión con Lerna
+### 1. Version bump with Lerna
 
-El monorepo usa versionado `independent`, cada paquete tiene su propia versión.
+The monorepo uses `independent` versioning — each package has its own version.
 
 ```bash
-# Interactivo — selecciona paquetes y tipo de bump (patch/minor/major)
+# Interactive — select packages and bump type (patch/minor/major)
 npx lerna version --no-push
 
-# Bump específico de iatools
+# iatools-specific bump
 npx lerna version --scope=@lsframework/iatools --no-push
 ```
 
-> Esto actualiza `package.json`, crea un commit y un tag de Git.
+> This updates `package.json`, creates a commit, and a Git tag.
 
-### 2. Bump manual (sin Lerna)
+### 2. Manual bump (without Lerna)
 
-Editar directamente `packages/iatools/package.json`:
+Edit `packages/iatools/package.json` directly:
 
 ```json
 {
-  "version": "1.4.0"  // ← cambiar la versión aquí
+  "version": "1.4.0"  // ← change the version here
 }
 ```
 
-### 3. Instalar localmente para probar
+### 3. Install locally for testing
 
-Después de compilar, podés instalar `iatools` globalmente desde tu copia local:
+After building, you can install `iatools` globally from your local copy:
 
 ```bash
-# Compilar iatools
+# Build iatools
 cd packages/iatools
 npm run compile
 
-# Opción A: Link global (desarrollo activo, refleja cambios al recompilar)
+# Option A: Global link (active development, reflects changes on recompile)
 npm link
 iatools --help
 
-# Opción B: Instalar el .tgz (simula instalación real de npm)
-npm pack                           # genera lsframework-iatools-X.X.X.tgz
+# Option B: Install the .tgz (simulates a real npm install)
+npm pack                           # generates lsframework-iatools-X.X.X.tgz
 npm install -g ./lsframework-iatools-*.tgz
 iatools --help
 ```
 
-### 4. Probar en un proyecto destino
+### 4. Test in a target project
 
 ```bash
-# Con link (Opción A)
-cd /ruta/al/proyecto-destino
+# With link (Option A)
+cd /path/to/target-project
 npm link @lsframework/iatools
 bunx iatools init
 
-# Con bunx apuntando al local (sin instalar)
+# With bunx pointing to local (without installing)
 cd packages/iatools && bun run compile
-cd /ruta/al/proyecto-destino
-bunx --prefix /ruta/a/ls-framework/packages/iatools iatools init
+cd /path/to/target-project
+bunx --prefix /path/to/ls-framework/packages/iatools iatools init
 ```
 
-### 5. Deshacer el link
+### 5. Unlink
 
 ```bash
 npm unlink -g @lsframework/iatools
@@ -181,14 +181,14 @@ npm unlink -g @lsframework/iatools
 
 ---
 
-## 📋 Generación de un Release
+## 📋 Release Generation
 
-Recomendamos utilizar el esquema de [GitFlow](https://nvie.com/posts/a-successful-git-branching-model/).
+We recommend using the [GitFlow](https://nvie.com/posts/a-successful-git-branching-model/) branching model.
 
-1.  Crear branch `release-X.X.X` desde `integration`.
-2.  Ejecutar `lerna version` para actualizar versiones y crear tags.
-3.  Mergear contra `integration` y `master`.
-4.  El pipeline de GitLab en `master` publicará automáticamente los paquetes.
+1.  Create a `release-X.X.X` branch from `integration`.
+2.  Run `lerna version` to update versions and create tags.
+3.  Merge into `integration` and `master`.
+4.  The GitLab pipeline on `master` will automatically publish the packages.
 
 ---
 

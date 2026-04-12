@@ -1,5 +1,5 @@
 ---
-description: Genera o actualiza Specs y Planes Automáticamente
+description: Generate or update Specs and Plans automatically
 ---
 # Workflow: SDD Fast-Forward
 

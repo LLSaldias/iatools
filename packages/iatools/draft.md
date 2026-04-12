@@ -1,16 +1,16 @@
 
 ## iatools framework - cli
-### Proceso de instalación
-similar al flujo de NPX SKILLS.SH 
+### Installation Process
+Similar to the NPX SKILLS.SH flow
 
 `bunx "@lsframework/iatools" --init`
 
 
-- consulta el IDE
+- queries the IDE
 
-- instala agentes personalizados
-- instala skills predefinidas.
-- instala skills custom
+- installs custom agents
+- installs predefined skills
+- installs custom skills
 
 `bunx "@lsframework/iatools" --update`
 
@@ -18,14 +18,14 @@ similar al flujo de NPX SKILLS.SH
 
 ## PROTO files
 
-#### Opción 1 - MVP  
-( escritura mediante CLI ) actualización manual por cli. 
+#### Option 1 - MVP  
+(CLI-driven writing) manual update via CLI.
 
-#### Opción 2 - ( deseada ) 
+#### Option 2 - (desired)
 
-importación directa. actualización según version de la lib.
-*VALIDAR* 
-- publicación npm registry -> assets vs proto.typescript
+direct import. update according to lib version.
+*VALIDATE* 
+- npm registry publishing -> assets vs proto.typescript
 
 
 ## Domain

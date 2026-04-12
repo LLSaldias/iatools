@@ -1,5 +1,5 @@
 ---
-description: Verifica que el código implementado cumple con el Spec
+description: Verify that the implemented code complies with the Spec
 ---
 # Workflow: SDD Verify
 
