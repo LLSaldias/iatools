@@ -146,6 +146,17 @@ program
     });
   });
 
+program
+  .command('changelog')
+  .description('📋  Generate changelog entries from archived SDD changes')
+  .option('--version <semver>', 'stamp this version on the entry')
+  .option('--dry-run', 'preview to stdout without writing', false)
+  .option('--dir <path>', 'target project directory', process.cwd())
+  .action(async (options: { version?: string; dryRun: boolean; dir: string }) => {
+    const { runChangelog } = await import('./commands/changelog');
+    await runChangelog({ ...options, dir: path.resolve(options.dir) });
+  });
+
 program.addHelpText(
   'after',
   `

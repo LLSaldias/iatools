@@ -7,6 +7,15 @@
         "iatools": "lib/index.js"
     },
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/LLSaldias/iatools.git"
+    },
+    "homepage": "https://github.com/LLSaldias/iatools#readme",
+    "bugs": {
+        "url": "https://github.com/LLSaldias/iatools/issues"
+    },
+    "keywords": ["sdd", "spec-driven-development", "cli", "ai-agents", "framework", "openspec"],
     "typings": "./lib/index.d.ts",
     "directories": {
         "lib": "lib",
@@ -23,7 +32,8 @@
         "lint": "eslint ./src ./test",
         "fix": "eslint --fix ./src ./test",
         "dependency-check": "depcheck .",
-        "dev": "ts-node -r tsconfig-paths/register src/index.ts"
+        "dev": "ts-node -r tsconfig-paths/register src/index.ts",
+        "prepublishOnly": "npm run compile && npm run test"
     },
     "dependencies": {
         "better-sqlite3": "^11.0.0",

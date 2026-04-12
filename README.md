@@ -188,7 +188,7 @@ We recommend using the [GitFlow](https://nvie.com/posts/a-successful-git-branchi
 1.  Create a `release-X.X.X` branch from `integration`.
 2.  Run `lerna version` to update versions and create tags.
 3.  Merge into `integration` and `master`.
-4.  The GitLab pipeline on `master` will automatically publish the packages.
+4.  The CI/CD pipeline on the release branch will automatically publish the packages.
 
 ---
 

@@ -16,7 +16,7 @@ This means "automatic ingest on archive" cannot be truly end-to-end with the cur
 - `openspec/specs/memory-ingest.md` — defines the human-in-the-loop, local-only ingestion contract.
 - `openspec/specs/memory-ingest-batch.md` — requires `archive/` to be skipped for `--all`.
 - `.agents/workflows/sdd-archive.md` — archive workflow currently merges specs, then moves the change to archive.
-- `/Users/lucassaldias/.copilot/skills/sdd-archive/SKILL.md` — archive skill confirms the same ordering and archive behavior.
+- `sdd-archive SKILL.md` — archive skill confirms the same ordering and archive behavior.
 - `packages/iatools/test/unit/iatools.test.ts` — existing test `T-08c` verifies that `archive/` is excluded.
 
 ### Approaches

@@ -13,6 +13,5 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [1.0.0] - 2023-02-09
 
-[Version 1.0.0 of package another-package](/packages/another-package/CHANGELOG.md#100---2023-02-09)
-[Version 1.0.0 of package example-package](/packages/example-package/CHANGELOG.md#100---2023-02-09)
+Initial release.
 
