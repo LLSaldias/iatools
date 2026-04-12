@@ -1,8 +1,8 @@
-import chalk from 'chalk';
 import { renderBanner } from '@/ui/components/banner';
 import { renderProgress, type ProgressOptions } from '@/ui/components/progress';
 import { renderTable, type TableOptions } from '@/ui/components/table';
 import { theme, keyHint as themeKeyHint, panel as themePanel } from '@/ui/theme';
+import chalk from 'chalk';
 
 if (process.env.NO_COLOR) { chalk.level = 0 as any; }
 

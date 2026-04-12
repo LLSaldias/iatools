@@ -1,12 +1,12 @@
-import {
-  parseProposal,
-  categorizeChange,
-  suggestBump,
-  formatChangelog,
-  scanArchive,
-  runChangelog,
-} from '../../src/commands/changelog';
 import type { ArchivedChange, ChangelogEntry } from '../../src/commands/changelog';
+import {
+    categorizeChange,
+    formatChangelog,
+    parseProposal,
+    runChangelog,
+    scanArchive,
+    suggestBump,
+} from '../../src/commands/changelog';
 
 jest.mock('fs-extra');
 jest.mock('@/ui', () => ({
