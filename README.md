@@ -8,20 +8,35 @@ This repository implements a working environment based on **Spec-Driven Developm
 
 ### 🛠️ CLI Tool: `iatools`
 
-The core tool is `@lsframework/iatools`, which allows you to initialize and manage the agentic environment in any project.
+The core tool is `@lsframework/iatools`, which allows you to initialize and manage the agentic environment in any project. It requires the **Bun** runtime.
 
-It is recommended to run it directly via `bunx` to ensure you're using the latest version:
+Run it directly via `bunx` to ensure you're using the latest version:
 
 ```bash
-bunx @lsframework/iatools init
+bunx @lsframework/iatools
 ```
 
-#### Main Operations
+Running with no arguments launches an **interactive TUI menu** (arrow keys to browse, Enter to launch). You can also run commands directly:
 
--   **`iatools init`**: Launches an interactive wizard to configure the framework. Installs the necessary agents, skills, and workflows based on your role and IDE.
--   **`iatools update`**: Refreshes skills and workflows from the latest templates, keeping your environment up to date.
--   **`iatools skills add <url> --skill <id>`**: Installs external skills from GitHub repositories.
--   **`iatools memory export`**: Exports the knowledge graph from `.sdd/memory.db` to `.sdd/memory.json` for Git.
+```bash
+iatools init          # Interactive setup wizard
+iatools update        # Refresh skills and workflows
+iatools --help        # Show all commands
+```
+
+#### Commands
+
+| Command | Description |
+|---------|-------------|
+| `iatools init` | Interactive wizard — set up the SDD framework |
+| `iatools update` | Refresh SDD skills and workflows |
+| `iatools changelog` | Generate changelog from archived changes |
+| `iatools trace --change <name>` | Trace decision lineage for a change |
+| `iatools review <phase> --change <name>` | Decompress and review a .cave artifact |
+| `iatools compress --change <name>` | Compress .md artifacts to .cave format |
+| `iatools memory query <text>` | Search memory with hybrid retrieval |
+| `iatools memory ingest` | Ingest extraction JSON into memory graph |
+| `iatools memory export` | Export memory graph to JSON |
 
 ---
 
@@ -61,8 +76,8 @@ As agentic tasks become more complex, the agent may need to pause, delegate cont
 
 ## 📦 Tech Stack
 
--   **Runtime**: [Node.js 20.x](https://nodejs.org/docs/latest-v20.x/api/) + [TypeScript](https://www.typescriptlang.org/docs)
--   **Package Manager**: [Bun](https://bun.sh/)
+-   **Runtime**: [Bun](https://bun.sh/) + [TypeScript](https://www.typescriptlang.org/docs)
+-   **TUI**: [@opentui/core](https://github.com/nicholasgasior/opentui) — full-screen terminal UI with keyboard navigation
 -   **Monorepo Management**: [Lerna](https://lerna.js.org/) (`independent` mode)
 
 ---
@@ -72,8 +87,7 @@ As agentic tasks become more complex, the agent may need to pause, delegate cont
 ### Prerequisites
 
 ```bash
-node -v   # >= 20.x (see .nvmrc)
-nvm use   # if using nvm
+bun -v    # >= 1.x — install from https://bun.sh
 ```
 
 ### Installation
@@ -142,41 +156,29 @@ Edit `packages/iatools/package.json` directly:
 
 ### 3. Install locally for testing
 
-After building, you can install `iatools` globally from your local copy:
+After building, register `iatools` as a global link:
 
 ```bash
-# Build iatools
 cd packages/iatools
-npm run compile
-
-# Option A: Global link (active development, reflects changes on recompile)
-npm link
-iatools --help
-
-# Option B: Install the .tgz (simulates a real npm install)
-npm pack                           # generates lsframework-iatools-X.X.X.tgz
-npm install -g ./lsframework-iatools-*.tgz
-iatools --help
+bun run compile
+bun link              # registers the package globally
+iatools               # launches the interactive TUI menu
+iatools --help        # shows styled help
 ```
 
 ### 4. Test in a target project
 
 ```bash
-# With link (Option A)
 cd /path/to/target-project
-npm link @lsframework/iatools
-bunx iatools init
-
-# With bunx pointing to local (without installing)
-cd packages/iatools && bun run compile
-cd /path/to/target-project
-bunx --prefix /path/to/ls-framework/packages/iatools iatools init
+bun link @lsframework/iatools
+iatools init
 ```
 
 ### 5. Unlink
 
 ```bash
-npm unlink -g @lsframework/iatools
+cd packages/iatools
+bun unlink
 ```
 
 ---
