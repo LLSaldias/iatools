@@ -5,8 +5,7 @@
 
 import type { TraceResult } from '@/pipeline/traceability/chain';
 import { traceChange, traceItem } from '@/pipeline/traceability/chain';
-import { panel } from '@/ui/theme';
-import { logger } from '@/utils/logger';
+import { createTuiContext } from '@/tui/context';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -22,10 +21,12 @@ export async function runTrace(options: {
   item?: string | undefined;
   dir: string;
 }): Promise<void> {
+  const tui = await createTuiContext();
   const changeDir = path.join(options.dir, 'openspec', 'changes', options.change);
 
   if (!fs.existsSync(changeDir)) {
-    logger.error(`Change directory not found: ${changeDir}`);
+    tui.log.error(`Change directory not found: ${changeDir}`);
+    await tui.destroy();
     return;
   }
 
@@ -33,21 +34,25 @@ export async function runTrace(options: {
     // Trace a single item — find its artifact by scanning
     const result = findAndTraceItem(changeDir, options.item);
     if (!result) {
-      logger.info('No trace found.');
+      tui.log.info('No trace found.');
+      await tui.destroy();
       return;
     }
-    console.log(panel(formatTraceResult(result), { title: `🔗 Trace: ${options.item}` }));
+    tui.log.info(`🔗 Trace: ${options.item}`);
+    tui.log.info(formatTraceResult(result));
   } else {
     const results = traceChange(changeDir);
     if (results.length === 0) {
-      logger.info('No trace found.');
+      tui.log.info('No trace found.');
+      await tui.destroy();
       return;
     }
     for (const result of results) {
-      console.log(panel(formatTraceResult(result), { title: `🔗 Trace: ${result.root.itemId}` }));
-      console.log('');
+      tui.log.info(`🔗 Trace: ${result.root.itemId}`);
+      tui.log.info(formatTraceResult(result));
     }
   }
+  await tui.destroy();
 }
 
 /**

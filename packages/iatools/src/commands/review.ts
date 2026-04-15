@@ -5,8 +5,7 @@
 
 import { parseCave } from '@/pipeline/caveman/compressor';
 import { decompress } from '@/pipeline/caveman/decompressor';
-import { panel } from '@/ui/theme';
-import { logger } from '@/utils/logger';
+import { createTuiContext } from '@/tui/context';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 
@@ -30,8 +29,11 @@ export async function runReview(options: {
     `${options.phase}.cave`,
   );
 
+  const tui = await createTuiContext();
+
   if (!(await fs.pathExists(cavePath))) {
-    logger.error(`Cave file not found: ${cavePath}`);
+    tui.log.error(`Cave file not found: ${cavePath}`);
+    await tui.destroy();
     return;
   }
 
@@ -39,8 +41,9 @@ export async function runReview(options: {
   const artifact = parseCave(caveContent);
   const markdown = decompress(artifact);
 
-  const title = `📖 ${options.phase} — ${options.change}`;
-  console.log(panel(markdown, { title }));
+  tui.banner('2.0.0');
+  tui.log.info(`📖 ${options.phase} — ${options.change}`);
+  tui.log.info(markdown);
 
   // Write the .md file alongside the .cave file
   const mdPath = path.join(
@@ -51,5 +54,6 @@ export async function runReview(options: {
     `${options.phase}.md`,
   );
   await fs.outputFile(mdPath, markdown, 'utf8');
-  logger.success(`Markdown written to ${mdPath}`);
+  tui.log.success(`Markdown written to ${mdPath}`);
+  await tui.destroy();
 }

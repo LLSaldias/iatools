@@ -14,10 +14,10 @@ import type { AuditEntry } from '@/safety/audit';
 import { logDecisions } from '@/safety/audit';
 import { apply } from '@/safety/redactor';
 import { scan } from '@/safety/scanner';
-import { runSanitizeReview } from '@/ui/screens/sanitize-review';
-import { logger } from '@/utils/logger';
+import { createTuiContext, type TuiContext } from '@/tui/context';
+import { createAppRenderer } from '@/tui/renderer';
+import { createSanitizeReview } from '@/tui/screens/sanitize-review';
 import * as fs from 'fs-extra';
-import ora from 'ora';
 import * as path from 'path';
 
 /** Options accepted by the memory ingest command */
@@ -37,17 +37,20 @@ export interface MemoryIngestOptions {
  * @param {MemoryIngestOptions} options - Parsed CLI options.
  */
 export async function runMemoryIngest(options: MemoryIngestOptions): Promise<void> {
+  const tui = await createTuiContext();
   if (options.all && options.change) {
-    logger.error('--all and --change are mutually exclusive. Use one or the other.');
+    tui.log.error('--all and --change are mutually exclusive. Use one or the other.');
+    await tui.destroy();
     process.exit(1);
   }
   if (options.all) {
-    await runBatchMode(options);
+    await runBatchMode(options, tui);
   } else if (options.from) {
-    await runIngestionMode(options);
+    await runIngestionMode(options, tui);
   } else {
-    await runPromptMode(options);
+    await runPromptMode(options, tui);
   }
+  await tui.destroy();
 }
 
 /**
@@ -57,7 +60,7 @@ export async function runMemoryIngest(options: MemoryIngestOptions): Promise<voi
  *
  * @param {MemoryIngestOptions} options - Parsed CLI options.
  */
-export async function runPromptMode(options: MemoryIngestOptions): Promise<void> {
+export async function runPromptMode(options: MemoryIngestOptions, tui: TuiContext): Promise<void> {
   const proposalPath = path.join(
     options.dir,
     'openspec',
@@ -69,14 +72,16 @@ export async function runPromptMode(options: MemoryIngestOptions): Promise<void>
   const promptOutPath = path.join(options.dir, '.sdd', `extraction-${options.change}.prompt.txt`);
 
   if (!(await fs.pathExists(proposalPath))) {
-    logger.error(
+    tui.log.error(
       `No proposal found for change '${options.change}'. Expected: openspec/changes/${options.change}/proposal.md`
     );
+    await tui.destroy();
     process.exit(1);
   }
 
   if (!(await fs.pathExists(dbPath))) {
-    logger.error('No memory database found. Run `iatools init` first.');
+    tui.log.error('No memory database found. Run `iatools init` first.');
+    await tui.destroy();
     process.exit(1);
   }
 
@@ -94,13 +99,13 @@ export async function runPromptMode(options: MemoryIngestOptions): Promise<void>
 
   await fs.outputFile(promptOutPath, prompt, 'utf8');
 
-  logger.success(`Extraction prompt saved to .sdd/extraction-${options.change}.prompt.txt`);
-  logger.newline();
-  logger.info('Next steps:');
-  logger.label('  1. Send the prompt above to an LLM (ChatGPT, Claude, etc.).');
-  logger.label('  2. Save the JSON response to a file, e.g. extraction.json');
-  logger.label(`  3. Run: iatools memory ingest --change ${options.change} --from extraction.json`);
-  logger.newline();
+  tui.log.success(`Extraction prompt saved to .sdd/extraction-${options.change}.prompt.txt`);
+  tui.log.info('');
+  tui.log.info('Next steps:');
+  tui.log.info('  1. Send the prompt above to an LLM (ChatGPT, Claude, etc.).');
+  tui.log.info('  2. Save the JSON response to a file, e.g. extraction.json');
+  tui.log.info(`  3. Run: iatools memory ingest --change ${options.change} --from extraction.json`);
+  tui.log.info('');
 }
 
 /**
@@ -110,12 +115,13 @@ export async function runPromptMode(options: MemoryIngestOptions): Promise<void>
  *
  * @param {MemoryIngestOptions} options - Parsed CLI options (options.from is defined).
  */
-async function runIngestionMode(options: MemoryIngestOptions): Promise<void> {
+async function runIngestionMode(options: MemoryIngestOptions, tui: TuiContext): Promise<void> {
   const dbPath = path.join(options.dir, '.sdd', 'memory.db');
   const fromPath = path.resolve(options.dir, options.from!);
 
   if (!(await fs.pathExists(dbPath))) {
-    logger.error('No memory database found. Run `iatools init` first.');
+    tui.log.error('No memory database found. Run `iatools init` first.');
+    await tui.destroy();
     process.exit(1);
   }
 
@@ -124,7 +130,8 @@ async function runIngestionMode(options: MemoryIngestOptions): Promise<void> {
     rawContent = await fs.readFile(fromPath, 'utf8');
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
-    logger.error(`Failed to read extraction file: ${msg}`);
+    tui.log.error(`Failed to read extraction file: ${msg}`);
+    await tui.destroy();
     process.exit(1);
   }
 
@@ -133,7 +140,8 @@ async function runIngestionMode(options: MemoryIngestOptions): Promise<void> {
     parsed = JSON.parse(rawContent);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
-    logger.error(`Failed to parse extraction JSON: ${msg}`);
+    tui.log.error(`Failed to parse extraction JSON: ${msg}`);
+    await tui.destroy();
     process.exit(1);
   }
 
@@ -143,40 +151,60 @@ async function runIngestionMode(options: MemoryIngestOptions): Promise<void> {
     !Array.isArray((parsed as Record<string, unknown>).nodes) ||
     !Array.isArray((parsed as Record<string, unknown>).edges)
   ) {
-    logger.error(
+    tui.log.error(
       'Invalid extraction JSON: expected an object with "nodes" and "edges" arrays.'
     );
+    await tui.destroy();
     process.exit(1);
   }
 
   const rawResult = parsed as ExtractionResult;
 
   if (options.dryRun) {
-    logger.header('Dry-run preview — nothing will be written to the database');
-    logger.newline();
-    logger.info(`Nodes to insert (up to 3):`);
+    tui.log.info('Dry-run preview — nothing will be written to the database');
+    tui.log.info('');
+    tui.log.info(`Nodes to insert (up to 3):`);
     for (const node of rawResult.nodes.slice(0, 3)) {
-      logger.label(`  [${node.label}] ${node.title}`);
+      tui.log.info(`  [${node.label}] ${node.title}`);
     }
-    logger.newline();
-    logger.info(`Edges to insert (up to 5):`);
+    tui.log.info('');
+    tui.log.info(`Edges to insert (up to 5):`);
     for (const edge of rawResult.edges.slice(0, 5)) {
       const target = edge.target_id ?? edge.target_title ?? '(unknown)';
-      logger.label(`  "${edge.source_title}" -[${edge.relation_type}]→ ${target}`);
+      tui.log.info(`  "${edge.source_title}" -[${edge.relation_type}]→ ${target}`);
     }
-    logger.newline();
+    tui.log.info('');
     return;
   }
 
   // Safety: scan all node content for secrets before ingestion
   const allContent = rawResult.nodes.map(n => n.content).join('\n---\n');
-  const candidates = scan(allContent);
-  if (candidates.length > 0) {
-    const decisions = await runSanitizeReview(candidates);
-    const approved = decisions.filter(d => d.decision === 'redact').map(d => d.candidate);
+  const scanCandidates = scan(allContent);
+  let activeTui: TuiContext = tui;
+
+  if (scanCandidates.length > 0) {
+    // Teardown current context for interactive sanitize review
+    await tui.destroy();
+
+    const sanitizeCandidates = scanCandidates.map((c, i) => ({
+      id: String(i),
+      severity: (c.severity === 'critical' ? 'high' : 'medium') as 'high' | 'medium',
+      label: c.label,
+      match: c.match,
+      context: c.context,
+      replacement: c.replacement,
+      patternId: c.patternId,
+    }));
+
+    const app = await createAppRenderer();
+    const tuiDecisions = await createSanitizeReview(app.renderer, app.root, sanitizeCandidates);
+    await app.destroy();
+
+    const approved = tuiDecisions
+      .filter(d => d.decision === 'redact')
+      .map(d => scanCandidates[parseInt(d.candidateId)]!);
 
     if (approved.length > 0) {
-      // Apply redactions to each node's content
       for (const node of rawResult.nodes) {
         const nodeCandidates = approved.filter(c => node.content.includes(c.match));
         if (nodeCandidates.length > 0) {
@@ -187,30 +215,39 @@ async function runIngestionMode(options: MemoryIngestOptions): Promise<void> {
 
     // Log audit decisions
     const auditPath = path.join(options.dir, '.sdd', 'sanitize-audit.jsonl');
-    const auditEntries: AuditEntry[] = decisions.map(d => ({
+    const crypto = await import('crypto');
+    const auditEntries: AuditEntry[] = tuiDecisions.map(d => ({
       ts: new Date().toISOString(),
       change: options.change,
-      patternId: d.candidate.patternId,
-      matchHash: require('crypto').createHash('sha256').update(d.candidate.match).digest('hex'),
+      patternId: scanCandidates[parseInt(d.candidateId)]!.patternId,
+      matchHash: crypto.createHash('sha256').update(scanCandidates[parseInt(d.candidateId)]!.match).digest('hex'),
       decision: d.decision,
       user: 'interactive',
     }));
     logDecisions(auditPath, auditEntries);
+
+    // Recreate tui for remaining output (original was destroyed for sanitize review)
+    activeTui = await createTuiContext();
   }
 
-  const spinner = ora({ text: 'Ingesting into memory graph...', color: 'magenta' }).start();
+  activeTui.log.info('Ingesting into memory graph...');
 
   try {
     const db = new MemoryDB(dbPath);
     const { nodesCreated, edgesCreated } = processExtractionResult(db, rawResult, options.change);
     db.close();
 
-    spinner.succeed(
+    activeTui.log.success(
       `Ingested ${nodesCreated} nodes and ${edgesCreated} edges for change '${options.change}'.`
     );
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
-    spinner.fail(`Ingestion failed: ${msg}`);
+    activeTui.log.error(`Ingestion failed: ${msg}`);
+  }
+
+  // Clean up recreated context if sanitize review occurred
+  if (activeTui !== tui) {
+    await activeTui.destroy();
   }
 }
 
@@ -229,28 +266,29 @@ interface BatchResult {
  *
  * @param {MemoryIngestOptions} options - Parsed CLI options.
  */
-async function runBatchMode(options: MemoryIngestOptions): Promise<void> {
+async function runBatchMode(options: MemoryIngestOptions, tui: TuiContext): Promise<void> {
   const dbPath = path.join(options.dir, '.sdd', 'memory.db');
   const changesDir = path.join(options.dir, 'openspec', 'changes');
 
   if (!(await fs.pathExists(dbPath))) {
-    logger.error('No memory database found. Run `iatools init` first.');
+    tui.log.error('No memory database found. Run `iatools init` first.');
+    await tui.destroy();
     process.exit(1);
   }
 
   const entries = await fs.readdir(changesDir, { withFileTypes: true });
-  const candidates = entries.filter(
+  const dirCandidates = entries.filter(
     (e) => e.isDirectory() && e.name !== 'archive'
   );
 
-  if (candidates.length === 0) {
-    logger.info('No changes with a proposal found in openspec/changes/.');
+  if (dirCandidates.length === 0) {
+    tui.log.info('No changes with a proposal found in openspec/changes/.');
     return;
   }
 
   const results: BatchResult[] = [];
 
-  for (const entry of candidates) {
+  for (const entry of dirCandidates) {
     const name = entry.name;
     const proposalPath = path.join(changesDir, name, 'proposal.md');
 
@@ -260,7 +298,7 @@ async function runBatchMode(options: MemoryIngestOptions): Promise<void> {
     }
 
     try {
-      await runPromptMode({ ...options, change: name });
+      await runPromptMode({ ...options, change: name }, tui);
       results.push({ name, status: 'done' });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -268,7 +306,7 @@ async function runBatchMode(options: MemoryIngestOptions): Promise<void> {
     }
   }
 
-  printBatchSummary(results);
+  printBatchSummary(results, tui);
 }
 
 /**
@@ -276,24 +314,24 @@ async function runBatchMode(options: MemoryIngestOptions): Promise<void> {
  *
  * @param {BatchResult[]} results - Array of per-change results.
  */
-function printBatchSummary(results: BatchResult[]): void {
+function printBatchSummary(results: BatchResult[], tui: TuiContext): void {
   const done = results.filter((r) => r.status === 'done').length;
   const skipped = results.filter((r) => r.status === 'skipped').length;
   const errors = results.filter((r) => r.status === 'error').length;
 
-  logger.newline();
-  logger.header(`Batch complete: ${done} processed, ${skipped} skipped, ${errors} errors`);
-  console.log('  ' + '─'.repeat(50));
+  tui.log.info('');
+  tui.log.info(`Batch complete: ${done} processed, ${skipped} skipped, ${errors} errors`);
+  tui.log.info('  ' + '─'.repeat(50));
   for (const r of results) {
     if (r.status === 'done') {
-      logger.success(r.name);
+      tui.log.success(r.name);
     } else if (r.status === 'skipped') {
-      logger.warn(`${r.name.padEnd(30)} (${r.reason ?? 'skipped'})`);
+      tui.log.warn(`${r.name.padEnd(30)} (${r.reason ?? 'skipped'})`);
     } else {
-      logger.error(`${r.name.padEnd(30)} (${r.reason ?? 'unknown error'})`);
+      tui.log.error(`${r.name.padEnd(30)} (${r.reason ?? 'unknown error'})`);
     }
   }
-  logger.newline();
+  tui.log.info('');
 }
 
 /**
@@ -305,17 +343,20 @@ function printBatchSummary(results: BatchResult[]): void {
  */
 export async function tryGenerateExtractionPrompt(changeName: string, dir: string): Promise<void> {
   const dbPath = path.join(dir, '.sdd', 'memory.db');
+  const tui = await createTuiContext();
 
   if (!(await fs.pathExists(dbPath))) {
-    logger.warn('Memory database not found. Skipping prompt generation.');
+    tui.log.warn('Memory database not found. Skipping prompt generation.');
+    await tui.destroy();
     return;
   }
 
   try {
-    await runPromptMode({ change: changeName, dir, dryRun: false, all: false });
+    await runPromptMode({ change: changeName, dir, dryRun: false, all: false }, tui);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
-    logger.warn(`Prompt generation failed: ${msg}. Continuing with archive.`);
+    tui.log.warn(`Prompt generation failed: ${msg}. Continuing with archive.`);
   }
-  logger.newline();
+  tui.log.info('');
+  await tui.destroy();
 }

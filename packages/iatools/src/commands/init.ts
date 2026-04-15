@@ -1,15 +1,13 @@
-import * as path from 'path';
-import inquirer from 'inquirer';
-import ora from 'ora';
-import { logger } from '@/utils/logger';
-import { ALL_ROLES, ROLES, getRole, type RoleId } from '@/roles/index';
 import {
   ALL_IDES,
   IDE_ADAPTERS,
   getIdeAdapter,
   type IdeId,
 } from '@/ides/index';
-import * as fs from 'fs-extra';
+import { ALL_ROLES, getRole, type RoleId } from '@/roles/index';
+import { createTuiContext, type TuiContext } from '@/tui/context';
+import { requireTTY } from '@/tui/fallback';
+import { writeFile } from '@/utils/file-writer';
 import {
   scaffoldAgents,
   scaffoldCopilotConfig,
@@ -18,7 +16,8 @@ import {
   scaffoldSkills,
   scaffoldWorkflows,
 } from '@/utils/scaffolders';
-import { writeFile } from '@/utils/file-writer';
+import * as fs from 'fs-extra';
+import * as path from 'path';
 
 /**
  * Run the interactive init wizard.
@@ -30,18 +29,48 @@ export async function runInit(
   projectRoot: string,
   force: boolean
 ): Promise<void> {
-  logger.banner();
-  logger.header('✨  SDD Framework Setup');
-  logger.newline();
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { version } = require('../../package.json') as { version: string };
+
+  if (!process.stdout.isTTY) {
+    requireTTY('init');
+  }
+
+  const tui = await createTuiContext({ interactive: true });
+  tui.banner(version);
+  tui.log.info('\u2728  SDD Framework Setup');
 
   const detected = await detectExistingSetup(projectRoot);
   if (detected.ides.length > 0) {
     const labels = detected.ides.map((id) => IDE_ADAPTERS[id].label).join(', ');
-    logger.info(`ℹ️  Detected existing configurations: ${labels}`);
+    tui.log.info(`\u2139\ufe0f  Detected existing configurations: ${labels}`);
   }
 
-  const answers = await promptForInit(detected);
-  await handleInitAnswers(projectRoot, force, answers);
+  // Use TUI wizard for IDE/role selection if available
+  let answers: { ides: IdeId[]; roles: RoleId[] };
+  if (process.stdout.isTTY) {
+    const { createAppRenderer } = await import('@/tui/renderer');
+    const { createInitWizard } = await import('@/tui/screens/init-wizard');
+    const app = await createAppRenderer();
+    const result = await createInitWizard(app.renderer, app.root, version);
+    await app.destroy();
+    if (!result) {
+      tui.log.info('Init cancelled.');
+      await tui.destroy();
+      return;
+    }
+    // Map wizard selections to IdeId/RoleId
+    const ideMap: Record<string, IdeId> = { vscode: 'copilot', cursor: 'cursor', windsurf: 'generic' };
+    const ides: IdeId[] = result.ides.includes('all')
+      ? ALL_IDES.slice()
+      : result.ides.map(v => ideMap[v] ?? v as IdeId).filter(Boolean);
+    answers = { ides, roles: result.roles as RoleId[] };
+  } else {
+    requireTTY('init');
+  }
+
+  await handleInitAnswers(projectRoot, force, answers, tui);
+  await tui.destroy();
 }
 
 /**
@@ -54,33 +83,26 @@ export async function runInit(
 async function handleInitAnswers(
   projectRoot: string,
   force: boolean,
-  answers: { ides: IdeId[]; roles: RoleId[] }
+  answers: { ides: IdeId[]; roles: RoleId[] },
+  tui: TuiContext,
 ): Promise<void> {
   const { ides, roles } = answers;
   const vars = buildInitVars(projectRoot, ides, roles);
 
-  await logScaffoldStart();
+  tui.log.info('Creating SDD framework files...');
 
   for (const ide of ides) {
     const adapter = getIdeAdapter(ide);
-    await scaffoldAll(projectRoot, adapter, roles, vars, force);
+    await scaffoldAll(projectRoot, adapter, roles, vars, force, tui);
     if (ide === 'copilot') {
       await scaffoldVsCodeSettings(projectRoot, force);
     }
-    await postInitMessages(adapter);
+    if (adapter.setupNote) {
+      tui.log.info(adapter.setupNote);
+    }
   }
 
-  logger.newline();
-}
-
-/**
- * Log the start of the scaffolding process.
- * @return {Promise<void>}
- */
-async function logScaffoldStart(): Promise<void> {
-  logger.newline();
-  logger.label('  Creating SDD framework files...');
-  logger.newline();
+  tui.log.success('\ud83d\ude80  Ready! Start your first change: /sdd-new <feature-name>');
 }
 
 /**
@@ -108,68 +130,6 @@ function buildInitVars(
 }
 
 /**
- *
- * @param { object } adapter IDE adapter instance
- * @return {Promise<void>}
- */
-async function postInitMessages(
-  adapter: ReturnType<typeof getIdeAdapter>
-): Promise<void> {
-  logger.newline();
-  if (adapter.setupNote) {
-    logger.info(adapter.setupNote);
-    logger.newline();
-  }
-  logger.header('🚀  Ready! Start your first change:');
-  logger.label('     /sdd-new <feature-name>');
-  logger.newline();
-  logger.newline();
-}
-
-/**
- * Prompt the user for IDE and role selection.
- * @param { object } detected Detected IDE and roles from the existing setup
- * @return { promises } Answers from the user prompt
- */
-async function promptForInit(detected: {
-  ides: IdeId[];
-  roles: RoleId[];
-}): Promise<{ ides: IdeId[]; roles: RoleId[] }> {
-  return inquirer.prompt([
-    {
-      type: 'checkbox',
-      name: 'ides',
-      message: 'Which IDE(s) / AI assistant(s) are you using? (spacebar to select)',
-      default: detected.ides,
-      choices: ALL_IDES.map((id) => {
-        const adapter = IDE_ADAPTERS[id];
-        return {
-          name: `${adapter.emoji}  ${adapter.label}  —  ${adapter.description}`,
-          value: id,
-        };
-      }),
-      validate: (answer) => {
-        if (answer.length < 1) {
-          return 'You must select at least one IDE.';
-        }
-        return true;
-      },
-    },
-    {
-      type: 'checkbox',
-      name: 'roles',
-      message:
-        'Select your developer role(s): (spacebar to select, at least one)',
-      default: detected.roles,
-      choices: ALL_ROLES.map((id) => ({
-        name: `${ROLES[id].emoji}  ${ROLES[id].label}  —  ${ROLES[id].description}`,
-        value: id,
-      }))
-    },
-  ]);
-}
-
-/**
  * Scaffold the entire SDD framework based on the selected IDE and roles.
  * @param {string} projectRoot Absolute path to the target project root
  * @param { promises } adapter IDE adapter instance
@@ -182,9 +142,9 @@ async function scaffoldAll(
   adapter: ReturnType<typeof getIdeAdapter>,
   roles: RoleId[],
   vars: Record<string, string>,
-  force: boolean
+  force: boolean,
+  tui: TuiContext,
 ): Promise<void> {
-  const spinner = ora({ text: 'Scaffolding...', color: 'magenta' }).start();
   const workflowsDir = adapter.workflowsDir(projectRoot);
   try {
     await performScaffolding(
@@ -195,9 +155,9 @@ async function scaffoldAll(
       force,
       workflowsDir
     );
-    spinner.succeed('Scaffolding complete. Copilot is now SDD-aware.');
+    tui.log.success('Scaffolding complete. Copilot is now SDD-aware.');
   } catch (error: unknown) {
-    spinner.fail(
+    tui.log.error(
       `Scaffolding failed: ${error instanceof Error ? error.message : String(error)}`
     );
     throw error;

@@ -6,7 +6,6 @@
 
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { logger } from './logger';
 
 export interface WriteOptions {
   /** Absolute destination path */
@@ -26,7 +25,7 @@ export async function writeFile(options: WriteOptions): Promise<boolean> {
   const { dest, content, overwrite = false } = options;
 
   if ((await fs.pathExists(dest)) && !overwrite) {
-    logger.warn(
+    console.warn(
       `Skipped (already exists): ${path.relative(process.cwd(), dest)}`
     );
     return false;
@@ -34,7 +33,7 @@ export async function writeFile(options: WriteOptions): Promise<boolean> {
 
   await fs.ensureDir(path.dirname(dest));
   await fs.writeFile(dest, content, 'utf8');
-  logger.success(path.relative(process.cwd(), dest));
+  console.log(path.relative(process.cwd(), dest));
   return true;
 }
 

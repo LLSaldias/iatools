@@ -4,12 +4,11 @@
  * for Git-friendly version control.
  */
 
-import * as path from 'path';
-import * as fs from 'fs-extra';
-import ora from 'ora';
 import { MemoryDB } from '@/memory/database';
 import type { MemoryExport } from '@/memory/types';
-import { logger } from '@/utils/logger';
+import { createTuiContext } from '@/tui/context';
+import * as fs from 'fs-extra';
+import * as path from 'path';
 
 /**
  * Export the memory database to a JSON file.
@@ -21,18 +20,21 @@ import { logger } from '@/utils/logger';
 export async function runMemoryExport(projectRoot: string): Promise<void> {
   const dbPath = path.join(projectRoot, '.sdd', 'memory.db');
   const jsonPath = path.join(projectRoot, '.sdd', 'memory.json');
+  const tui = await createTuiContext();
 
   if (!(await fs.pathExists(dbPath))) {
-    logger.warn(
+    tui.log.warn(
       'No memory database found. Run `iatools init` first to create .sdd/memory.db'
     );
+    await tui.destroy();
     return;
   }
 
-  const spinner = ora({ text: 'Exporting memory graph...', color: 'magenta' }).start();
+  const progress = tui.progress({ current: 0, total: 2, label: 'Exporting memory graph...' });
 
   try {
     const db = new MemoryDB(dbPath);
+    progress.update(1, 2, 'Reading nodes and edges...');
     const nodes = db.getAllNodes();
     const edges = db.getAllEdges();
     db.close();
@@ -44,12 +46,14 @@ export async function runMemoryExport(projectRoot: string): Promise<void> {
     };
 
     await fs.writeFile(jsonPath, JSON.stringify(exportData, null, 2), 'utf8');
+    progress.update(2, 2, 'Done');
 
-    spinner.succeed(
+    tui.log.success(
       `Exported ${nodes.length} nodes and ${edges.length} edges to .sdd/memory.json`
     );
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
-    spinner.fail(`Export failed: ${msg}`);
+    tui.log.error(`Export failed: ${msg}`);
   }
+  await tui.destroy();
 }

@@ -6,11 +6,26 @@ import { interpolate } from '../../src/utils/file-writer';
 jest.mock('fs-extra');
 jest.mock('@/memory/database');
 jest.mock('@/memory/ingestion');
-jest.mock('ora', () => {
-  const spinnerMock = { start: jest.fn(), succeed: jest.fn(), fail: jest.fn() };
-  spinnerMock.start.mockReturnValue(spinnerMock);
-  return jest.fn(() => spinnerMock);
-});
+jest.mock('@/tui/context', () => ({
+  createTuiContext: jest.fn().mockResolvedValue({
+    banner: jest.fn(),
+    log: { info: jest.fn(), success: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },
+    progress: jest.fn().mockReturnValue({ update: jest.fn(), container: {} }),
+    table: jest.fn(),
+    destroy: jest.fn(),
+    requireTTY: jest.fn(),
+  }),
+}));
+jest.mock('@/tui/renderer', () => ({
+  createAppRenderer: jest.fn().mockResolvedValue({
+    renderer: { root: { add: jest.fn() }, requestRender: jest.fn(), destroy: jest.fn() },
+    root: { add: jest.fn() },
+    destroy: jest.fn(),
+  }),
+}));
+jest.mock('@/tui/screens/sanitize-review', () => ({
+  createSanitizeReview: jest.fn().mockResolvedValue([]),
+}));
 
 describe('interpolate', () => {
   it('should replace all known placeholders', () => {
@@ -133,7 +148,7 @@ describe('memory ingest', () => {
     jest.clearAllMocks();
     exitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {
       throw new Error('process.exit called');
-    }) as (code?: number) => never);
+    }) as () => never);
     consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => undefined);
 
     dbMock.MemoryDB.mockImplementation(() => ({
@@ -376,10 +391,12 @@ describe('memory ingest', () => {
       );
 
       const { tryGenerateExtractionPrompt } = await import('../../src/commands/memory-ingest');
+      const { createTuiContext } = require('@/tui/context');
       await tryGenerateExtractionPrompt('my-change', PROJECT_ROOT);
 
       expect(ingestionMock.buildExtractionPrompt).not.toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith(
+      const mockTui = await createTuiContext();
+      expect(mockTui.log.warn).toHaveBeenCalledWith(
         expect.stringContaining('Memory database not found')
       );
     });
@@ -389,11 +406,13 @@ describe('memory ingest', () => {
       fsMock.readFile.mockRejectedValueOnce(new Error('disk read failure'));
 
       const { tryGenerateExtractionPrompt } = await import('../../src/commands/memory-ingest');
+      const { createTuiContext } = require('@/tui/context');
       await expect(
         tryGenerateExtractionPrompt('my-change', PROJECT_ROOT)
       ).resolves.toBeUndefined();
 
-      expect(consoleSpy).toHaveBeenCalledWith(
+      const mockTui = await createTuiContext();
+      expect(mockTui.log.warn).toHaveBeenCalledWith(
         expect.stringContaining('Prompt generation failed')
       );
     });

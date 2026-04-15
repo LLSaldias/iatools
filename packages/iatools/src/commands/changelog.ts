@@ -3,7 +3,7 @@
  * Generates changelog entries from archived SDD changes.
  */
 
-import { logger } from '@/ui';
+import { createTuiContext } from '@/tui/context';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 
@@ -109,7 +109,7 @@ export function formatChangelog(version: string, date: string, entries: Changelo
 /**
  * Scan archive directory for archived changes with proposals.
  */
-export async function scanArchive(archiveDir: string): Promise<ArchivedChange[]> {
+export async function scanArchive(archiveDir: string, tui?: { log: { warn(msg: string): void } }): Promise<ArchivedChange[]> {
   if (!(await fs.pathExists(archiveDir))) {
     return [];
   }
@@ -125,10 +125,10 @@ export async function scanArchive(archiveDir: string): Promise<ArchivedChange[]>
       if (parsed) {
         changes.push(parsed);
       } else {
-        logger.warn(`Skipping ${dirName}: could not parse proposal`);
+        tui?.log.warn(`Skipping ${dirName}: could not parse proposal`);
       }
     } else {
-      logger.warn(`Skipping ${dirName}: no proposal.md found`);
+      tui?.log.warn(`Skipping ${dirName}: no proposal.md found`);
     }
   }
 
@@ -139,18 +139,20 @@ export async function scanArchive(archiveDir: string): Promise<ArchivedChange[]>
  * Entry point for the `iatools changelog` command.
  */
 export async function runChangelog(options: ChangelogOptions): Promise<void> {
+  const tui = await createTuiContext();
   const projectRoot = options.dir;
   const archiveDir = path.join(projectRoot, 'openspec', 'changes', 'archive');
 
-  logger.header('Changelog Generator');
+  tui.log.info('Changelog Generator');
 
-  const changes = await scanArchive(archiveDir);
+  const changes = await scanArchive(archiveDir, tui);
   if (changes.length === 0) {
-    logger.warn('No archived changes found. Nothing to generate.');
+    tui.log.warn('No archived changes found. Nothing to generate.');
+    await tui.destroy();
     return;
   }
 
-  logger.info(`Found ${changes.length} archived change(s)`);
+  tui.log.info(`Found ${changes.length} archived change(s)`);
 
   const allEntries: ChangelogEntry[] = [];
   for (const change of changes) {
@@ -161,13 +163,14 @@ export async function runChangelog(options: ChangelogOptions): Promise<void> {
   const version = options.version ?? `0.0.0-${bump.level}`;
   const date = new Date().toISOString().slice(0, 10);
 
-  logger.info(`Suggested bump: ${bump.level} (${bump.reason})`);
+  tui.log.info(`Suggested bump: ${bump.level} (${bump.reason})`);
 
   const output = formatChangelog(version, date, allEntries);
 
   if (options.dryRun) {
-    logger.info('Dry-run mode — preview only:\n');
-    console.log(output);
+    tui.log.info('Dry-run mode \u2014 preview only:\n');
+    tui.log.info(output);
+    await tui.destroy();
     return;
   }
 
@@ -186,5 +189,6 @@ export async function runChangelog(options: ChangelogOptions): Promise<void> {
   }
 
   await fs.writeFile(changelogPath, newContent, 'utf-8');
-  logger.success(`Changelog updated: ${changelogPath}`);
+  tui.log.success(`Changelog updated: ${changelogPath}`);
+  await tui.destroy();
 }

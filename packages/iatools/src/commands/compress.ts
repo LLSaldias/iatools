@@ -5,7 +5,7 @@
 
 import { compress, serializeCave } from '@/pipeline/caveman/compressor';
 import type { CaveHeader } from '@/pipeline/caveman/profiles';
-import { logger } from '@/utils/logger';
+import { createTuiContext } from '@/tui/context';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 
@@ -31,10 +31,12 @@ export async function runCompress(options: {
   phase?: string | undefined;
   dir: string;
 }): Promise<void> {
+  const tui = await createTuiContext();
   const changeDir = path.join(options.dir, 'openspec', 'changes', options.change);
 
   if (!(await fs.pathExists(changeDir))) {
-    logger.error(`Change directory not found: ${changeDir}`);
+    tui.log.error(`Change directory not found: ${changeDir}`);
+    await tui.destroy();
     return;
   }
 
@@ -68,26 +70,33 @@ export async function runCompress(options: {
   }
 
   if (results.length === 0) {
-    logger.info('No .md files found to compress.');
+    tui.log.info('No .md files found to compress.');
+    await tui.destroy();
     return;
   }
 
   // Display results table
-  logger.header('Compression Results');
-  logger.newline();
-  const header = `  ${'Phase'.padEnd(12)} ${'Original'.padStart(10)} ${'Compressed'.padStart(12)} ${'Savings'.padStart(10)}`;
-  console.log(header);
-  console.log('  ' + '─'.repeat(48));
+  tui.table({
+    title: 'Compression Results',
+    columns: [
+      { header: 'Phase', key: 'phase', width: 12 },
+      { header: 'Original', key: 'original', width: 10, align: 'right' },
+      { header: 'Compressed', key: 'compressed', width: 12, align: 'right' },
+      { header: 'Savings', key: 'savings', width: 10, align: 'right' },
+    ],
+    rows: results.map((r) => {
+      const savings = r.originalTokens > 0
+        ? ((1 - r.compressedTokens / r.originalTokens) * 100).toFixed(1) + '%'
+        : '0.0%';
+      return {
+        phase: r.phase,
+        original: String(r.originalTokens),
+        compressed: String(r.compressedTokens),
+        savings,
+      };
+    }),
+  });
 
-  for (const r of results) {
-    const savings = r.originalTokens > 0
-      ? ((1 - r.compressedTokens / r.originalTokens) * 100).toFixed(1)
-      : '0.0';
-    console.log(
-      `  ${r.phase.padEnd(12)} ${String(r.originalTokens).padStart(10)} ${String(r.compressedTokens).padStart(12)} ${(savings + '%').padStart(10)}`
-    );
-  }
-
-  logger.newline();
-  logger.success(`Compressed ${results.length} artifact(s) for change '${options.change}'.`);
+  tui.log.success(`Compressed ${results.length} artifact(s) for change '${options.change}'.`);
+  await tui.destroy();
 }

@@ -6,9 +6,7 @@
 import { MemoryDB } from '@/memory/database';
 import { getProvider } from '@/memory/embeddings/fallback';
 import { hybridRetrieve } from '@/memory/hybrid-retrieval';
-import type { QueryResult } from '@/ui/screens/query-results';
-import { renderQueryResults } from '@/ui/screens/query-results';
-import { logger } from '@/utils/logger';
+import { createTuiContext } from '@/tui/context';
 import * as path from 'path';
 
 /**
@@ -24,12 +22,14 @@ export async function runMemoryQuery(options: {
   maxResults?: number;
 }): Promise<void> {
   const dbPath = path.join(options.dir, '.sdd', 'memory.db');
+  const tui = await createTuiContext();
 
   let db: MemoryDB;
   try {
     db = new MemoryDB(dbPath);
   } catch {
-    logger.error('No memory database found. Run `iatools init` first.');
+    tui.log.error('No memory database found. Run `iatools init` first.');
+    await tui.destroy();
     return;
   }
 
@@ -41,25 +41,50 @@ export async function runMemoryQuery(options: {
     });
 
     if (context.nodes.length === 0) {
-      logger.info('No matching nodes found.');
+      tui.log.info('No matching nodes found.');
+      await tui.destroy();
       return;
     }
 
-    const results: QueryResult[] = context.nodes.map((node) => ({
-      node,
-      score: 1,
-    }));
+    if (process.stdout.isTTY) {
+      const { createAppRenderer } = await import('@/tui/renderer');
+      const { createQueryResultsScreen } = await import('@/tui/screens/query-results');
+      const app = await createAppRenderer();
+      const items = context.nodes.map((node) => ({
+        id: node.id,
+        score: 1,
+        type: node.label,
+        title: node.title,
+        ...(node.source ? { source: node.source } : {}),
+        content: node.content,
+      }));
+      const result = await createQueryResultsScreen(app.renderer, app.root, options.query, items);
+      await app.destroy();
 
-    const selectedIds = await renderQueryResults(options.query, results);
-
-    if (selectedIds.length > 0) {
-      logger.newline();
-      logger.info('Selected node IDs:');
-      for (const id of selectedIds) {
-        logger.label(`  ${id}`);
+      if (result.selected.length > 0) {
+        tui.log.info('Selected node IDs:');
+        for (const id of result.selected) {
+          tui.log.info(`  ${id}`);
+        }
       }
+    } else {
+      // Non-TTY fallback: just print results
+      tui.table({
+        title: `Query: "${options.query}"`,
+        columns: [
+          { header: '#', key: 'idx', width: 5 },
+          { header: 'Type', key: 'type', width: 12 },
+          { header: 'Title', key: 'title', width: 30 },
+        ],
+        rows: context.nodes.map((node, i) => ({
+          idx: String(i + 1),
+          type: node.label,
+          title: node.title,
+        })),
+      });
     }
   } finally {
     db.close();
   }
+  await tui.destroy();
 }

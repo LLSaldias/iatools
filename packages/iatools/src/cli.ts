@@ -11,10 +11,101 @@ import { runMemoryQuery } from '@/commands/memory-query';
 import { runReview } from '@/commands/review';
 import { runTrace } from '@/commands/trace';
 import { runUpdate } from '@/commands/update';
+import { THEME } from '@/tui/theme';
 import { Command } from 'commander';
 import * as path from 'path';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { version } = require('../package.json') as { version: string };
+
+/* ── ANSI helpers ─────────────────────────────────────────────── */
+function hexToAnsi(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `\x1b[38;2;${r};${g};${b}m`;
+}
+const RST = '\x1b[0m';
+const BLD = '\x1b[1m';
+const DIM = '\x1b[2m';
+const c = {
+  primary: hexToAnsi(THEME.colors.primary),
+  success: hexToAnsi(THEME.colors.success),
+  warning: hexToAnsi(THEME.colors.warning),
+  muted: hexToAnsi(THEME.colors.muted),
+  accent: hexToAnsi(THEME.colors.accent),
+  highlight: hexToAnsi(THEME.colors.highlight),
+};
+
+/* ── Custom styled help ───────────────────────────────────────── */
+function printStyledHelp(): void {
+  // Banner
+  const w = 52;
+  console.log(c.primary + '╭' + '─'.repeat(w) + '╮' + RST);
+  console.log(c.primary + '│' + RST + c.primary + BLD + '  iatools' + RST + ' '.repeat(w - 9) + c.primary + '│' + RST);
+  console.log(c.primary + '│' + RST + c.muted + `  v${version} · Spec-Driven Development` + RST + ' '.repeat(Math.max(0, w - 4 - version.length - 28)) + c.primary + '│' + RST);
+  console.log(c.primary + '╰' + '─'.repeat(w) + '╯' + RST);
+  console.log();
+
+  // Commands section
+  console.log(c.primary + BLD + '  Commands' + RST);
+  console.log(c.muted + '  ' + '─'.repeat(w) + RST);
+
+  const cmds: Array<[string, string, string]> = [
+    ['🪄', 'init',             'Interactive wizard: set up the SDD framework'],
+    ['🔄', 'update',           'Refresh SDD skills and workflows'],
+    ['📋', 'changelog',        'Generate changelog from archived changes'],
+    ['🔗', 'trace',            'Trace decision lineage for a change'],
+    ['📖', 'review <phase>',   'Decompress and review a .cave artifact'],
+    ['📦', 'compress',         'Compress .md artifacts to .cave format'],
+  ];
+
+  for (const [icon, name, desc] of cmds) {
+    const padName = name.padEnd(20);
+    console.log(`  ${icon} ${c.accent}${BLD}${padName}${RST} ${c.muted}${desc}${RST}`);
+  }
+  console.log();
+
+  // Memory subcommands
+  console.log(c.primary + BLD + '  🧠  Memory' + RST);
+  console.log(c.muted + '  ' + '─'.repeat(w) + RST);
+
+  const memCmds: Array<[string, string]> = [
+    ['memory query <text>', 'Search memory with hybrid retrieval'],
+    ['memory ingest',       'Ingest extraction JSON into memory graph'],
+    ['memory export',       'Export memory graph to JSON'],
+  ];
+  for (const [name, desc] of memCmds) {
+    const padName = name.padEnd(22);
+    console.log(`    ${c.accent}${padName}${RST} ${c.muted}${desc}${RST}`);
+  }
+  console.log();
+
+  // SDD Flows
+  console.log(c.primary + BLD + '  🚀  SDD Flows (Slash Commands)' + RST);
+  console.log(c.muted + '  ' + '─'.repeat(w) + RST);
+
+  const flows: Array<[string, string]> = [
+    ['/sdd-new <name>',      'Start a new SDD change'],
+    ['/sdd-ff [name]',       'Fast-forward: generate all planning artifacts'],
+    ['/sdd-apply [name]',    'Implement tasks one by one'],
+    ['/sdd-verify [name]',   'Validate implementation against specs'],
+    ['/sdd-archive [name]',  'Archive a completed change'],
+    ['/sdd-explore [topic]', 'Explore ideas before committing'],
+  ];
+  for (const [name, desc] of flows) {
+    const padName = name.padEnd(22);
+    console.log(`    ${c.success}${padName}${RST} ${c.muted}${desc}${RST}`);
+  }
+  console.log();
+
+  // Options
+  console.log(c.primary + BLD + '  Options' + RST);
+  console.log(c.muted + '  ' + '─'.repeat(w) + RST);
+  console.log(`    ${c.accent}-V, --version${RST}         ${c.muted}Output the version number${RST}`);
+  console.log(`    ${c.accent}-h, --help${RST}            ${c.muted}Display this help${RST}`);
+  console.log(`    ${DIM}${c.muted}<command> --help${RST}       ${c.muted}Help for a specific command${RST}`);
+  console.log();
+}
 
 export const program = new Command();
 
@@ -157,35 +248,16 @@ program
     await runChangelog({ ...options, dir: path.resolve(options.dir) });
   });
 
-program.addHelpText(
-  'after',
-  `
-🚀  SDD Flows (Slash Commands):
-  /sdd-new <name>      Start a new SDD change
-                       Example: /sdd-new user-auth
-  /sdd-ff [name]       Fast-forward: generate all planning artifacts
-                       Example: /sdd-ff
-  /sdd-apply [name]    Implement tasks one by one
-                       Example: /sdd-apply
-  /sdd-verify [name]   Validate implementation against specs
-                       Example: /sdd-verify
-  /sdd-archive [name]  Archive a completed change
-                       Example: /sdd-archive
-  /sdd-explore [topic] Explore ideas before committing
-                       Example: /sdd-explore refactoring-db
-
-🛠️  Pipeline Commands:
-  trace                Trace decision lineage across .cave artifacts
-                       Example: iatools trace --change my-feature --item T1
-  review <phase>       Decompress and display a .cave artifact
-                       Example: iatools review proposal --change my-feature
-  compress             Compress .md artifacts to .cave format
-                       Example: iatools compress --change my-feature
-
-🧠  Memory Commands:
-  memory query <text>  Search memory with hybrid retrieval
-                       Example: iatools memory query "authentication flow"
-  memory ingest        Ingest extraction JSON into memory graph
-  memory export        Export memory graph to JSON
-`
-);
+program.addHelpText('beforeAll', '');
+program.configureHelp({
+  formatHelp: (cmd, helper) => {
+    // Only override the top-level help; subcommands use default
+    if (cmd.name() === 'iatools') {
+      printStyledHelp();
+      return '';
+    }
+    // For subcommands, use default Commander formatting with color
+    const defaultHelp = Command.prototype.helpInformation.call(cmd);
+    return defaultHelp;
+  },
+});

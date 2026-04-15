@@ -6,30 +6,31 @@ import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
 
-// Mock logger for all tests
-jest.mock('@/utils/logger', () => ({
-  logger: {
-    success: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    header: jest.fn(),
-    label: jest.fn(),
-    newline: jest.fn(),
+// Mock tui context for all tests
+jest.mock('@/tui/context', () => ({
+  createTuiContext: jest.fn().mockResolvedValue({
     banner: jest.fn(),
-  },
+    table: jest.fn(),
+    progress: jest.fn(() => ({ update: jest.fn() })),
+    diffView: jest.fn(),
+    log: { info: jest.fn(), success: jest.fn(), warn: jest.fn(), error: jest.fn() },
+    destroy: jest.fn().mockResolvedValue(undefined),
+  }),
 }));
 
-// Mock ora
-jest.mock('ora', () => {
-  const spinnerMock = { start: jest.fn(), succeed: jest.fn(), fail: jest.fn() };
-  spinnerMock.start.mockReturnValue(spinnerMock);
-  return jest.fn(() => spinnerMock);
-});
-
-// Mock inquirer for sanitize-review and query-results
-jest.mock('inquirer', () => ({
-  prompt: jest.fn().mockResolvedValue({ selected: [], action: 'keep' }),
+// Mock tui renderer and screens for interactive commands
+jest.mock('@/tui/renderer', () => ({
+  createAppRenderer: jest.fn().mockResolvedValue({
+    renderer: { keyInput: { on: jest.fn() }, root: { add: jest.fn() }, requestRender: jest.fn(), destroy: jest.fn() },
+    root: { add: jest.fn() },
+    destroy: jest.fn().mockResolvedValue(undefined),
+  }),
+}));
+jest.mock('@/tui/screens/query-results', () => ({
+  createQueryResultsScreen: jest.fn().mockResolvedValue({ selected: [] }),
+}));
+jest.mock('@/tui/screens/sanitize-review', () => ({
+  createSanitizeReview: jest.fn().mockResolvedValue([]),
 }));
 
 // Mock memory DB
@@ -88,36 +89,6 @@ jest.mock('@/pipeline/caveman/decompressor', () => ({
   decompress: jest.fn().mockReturnValue('# Proposal: test-change\n\n## Intent\n\nTest intent\n'),
 }));
 
-// Mock UI theme
-jest.mock('@/ui/theme', () => ({
-  panel: jest.fn((content: string) => `[PANEL]\n${content}\n[/PANEL]`),
-  theme: {
-    colors: {
-      primary: (s: string) => s,
-      success: (s: string) => s,
-      warning: (s: string) => s,
-      error: (s: string) => s,
-      muted: (s: string) => s,
-      accent: (s: string) => s,
-      highlight: (s: string) => s,
-    },
-    icons: { success: '✓', error: '✗', arrow: '→', warning: '⚠', bullet: '•', pointer: '>', star: '🪄', brain: '🧠', shield: '🛡️', trace: '🔗' },
-    box: { borderStyle: 'round', padding: { top: 0, bottom: 0, left: 1, right: 1 } },
-  },
-  header: jest.fn((s: string) => s),
-  statusBadge: jest.fn((s: string) => s),
-  keyHint: jest.fn(() => ''),
-}));
-
-// Mock UI screens
-jest.mock('@/ui/screens/query-results', () => ({
-  renderQueryResults: jest.fn().mockResolvedValue([]),
-}));
-
-jest.mock('@/ui/screens/sanitize-review', () => ({
-  runSanitizeReview: jest.fn().mockResolvedValue([]),
-}));
-
 // Mock safety modules
 jest.mock('@/safety/scanner', () => ({
   scan: jest.fn().mockReturnValue([]),
@@ -133,18 +104,14 @@ jest.mock('@/safety/audit', () => ({
   hashMatch: jest.fn().mockReturnValue('abc123'),
 }));
 
-// Mock boxen used by theme
-jest.mock('boxen', () => jest.fn((content: string) => `[BOX]${content}[/BOX]`));
+// mockTui is resolved from the mock in tests
+let mockTui: any;
 
-// Mock cli-table3
-jest.mock('cli-table3', () => {
-  return jest.fn().mockImplementation(() => ({
-    push: jest.fn(),
-    toString: jest.fn().mockReturnValue('mock-table'),
-  }));
+beforeEach(async () => {
+  jest.clearAllMocks();
+  const { createTuiContext } = require('@/tui/context');
+  mockTui = await createTuiContext();
 });
-
-import { logger } from '@/utils/logger';
 
 describe('memory-query command', () => {
   const { runMemoryQuery } = require('@/commands/memory-query');
@@ -163,7 +130,7 @@ describe('memory-query command', () => {
   it('logs "No matching nodes found." with empty DB', async () => {
     hybridRetrieve.mockResolvedValue({ nodes: [], edges: [], formatted: '' });
     await runMemoryQuery({ query: 'test', dir: '/tmp/test-project' });
-    expect(logger.info).toHaveBeenCalledWith('No matching nodes found.');
+    expect(mockTui.log.info).toHaveBeenCalledWith('No matching nodes found.');
   });
 });
 
@@ -176,7 +143,7 @@ describe('trace command', () => {
 
   it('logs error with nonexistent change dir', async () => {
     await runTrace({ change: 'nonexistent-change', dir: '/tmp/no-such-project' });
-    expect(logger.error).toHaveBeenCalledWith(
+    expect(mockTui.log.error).toHaveBeenCalledWith(
       expect.stringContaining('Change directory not found')
     );
   });
@@ -191,7 +158,7 @@ describe('review command', () => {
 
   it('logs error with nonexistent .cave file', async () => {
     await runReview({ phase: 'proposal', change: 'no-change', dir: '/tmp/no-project' });
-    expect(logger.error).toHaveBeenCalledWith(
+    expect(mockTui.log.error).toHaveBeenCalledWith(
       expect.stringContaining('Cave file not found')
     );
   });

@@ -3,12 +3,11 @@
  * without overwriting custom changes in openspec/ or role agent files.
  */
 
-import * as path from 'path';
-import ora from 'ora';
-import { logger } from '@/utils/logger';
-import { copyTemplateDir, writeFile, interpolate } from '@/utils/file-writer';
-import { getIdeAdapter, ALL_IDES } from '@/ides/index';
+import { ALL_IDES, getIdeAdapter } from '@/ides/index';
+import { createTuiContext } from '@/tui/context';
+import { copyTemplateDir, interpolate, writeFile } from '@/utils/file-writer';
 import * as fs from 'fs-extra';
+import * as path from 'path';
 
 const TEMPLATES_DIR = path.join(__dirname, '..', '..', 'templates');
 
@@ -21,11 +20,14 @@ const TEMPLATES_DIR = path.join(__dirname, '..', '..', 'templates');
  * @param force If true, also overwrite the constitution
  */
 export async function runUpdate(projectRoot: string, force: boolean): Promise<void> {
-    logger.banner();
-    logger.header('🔄  Updating SDD Framework Files');
-    logger.newline();
+    const tui = await createTuiContext();
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { version } = require('../../package.json') as { version: string };
+    tui.banner(version);
+    tui.log.info('🔄  Updating SDD Framework Files');
+    tui.log.info('');
 
-    const spinner = ora({ text: 'Refreshing skills and workflows...', color: 'cyan' }).start();
+    const progress = tui.progress({ current: 0, total: 3, label: 'Refreshing skills and workflows...' });
 
     try {
         let ideId: any = 'generic';
@@ -40,6 +42,8 @@ export async function runUpdate(projectRoot: string, force: boolean): Promise<vo
         const agentsDir = adapter.agentDir(projectRoot);
         const workflowsDir = adapter.workflowsDir(projectRoot);
 
+        progress.update(1, 3, 'Copying workflows...');
+
         await copyTemplateDir(
             path.join(TEMPLATES_DIR, 'workflows'),
             workflowsDir,
@@ -48,6 +52,7 @@ export async function runUpdate(projectRoot: string, force: boolean): Promise<vo
         );
 
         if (force) {
+            progress.update(2, 3, 'Updating constitution...');
             const constitutionSrc = path.join(TEMPLATES_DIR, 'agents', 'constitution.md');
             const raw = await fs.readFile(constitutionSrc, 'utf8');
             await writeFile({
@@ -57,16 +62,19 @@ export async function runUpdate(projectRoot: string, force: boolean): Promise<vo
             });
         }
 
-        spinner.succeed(`SDD framework updated! (Detected: ${adapter.label})`);
+        progress.update(3, 3, 'Done');
+        tui.log.success(`SDD framework updated! (Detected: ${adapter.label})`);
     } catch (err) {
-        spinner.fail('Update failed');
+        tui.log.error('Update failed');
+        await tui.destroy();
         throw err;
     }
 
-    logger.newline();
-    logger.info('SDD framework files refreshed from latest templates.');
+    tui.log.info('');
+    tui.log.info('SDD framework files refreshed from latest templates.');
     if (!force) {
-        logger.label('    (constitution preserved — use --force to also refresh it)');
+        tui.log.info('    (constitution preserved — use --force to also refresh it)');
     }
-    logger.newline();
+    tui.log.info('');
+    await tui.destroy();
 }

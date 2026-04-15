@@ -1,31 +1,34 @@
 import type { ArchivedChange, ChangelogEntry } from '../../src/commands/changelog';
 import {
-    categorizeChange,
-    formatChangelog,
-    parseProposal,
-    runChangelog,
-    scanArchive,
-    suggestBump,
+  categorizeChange,
+  formatChangelog,
+  parseProposal,
+  runChangelog,
+  scanArchive,
+  suggestBump,
 } from '../../src/commands/changelog';
 
 jest.mock('fs-extra');
-jest.mock('@/ui', () => ({
-  logger: {
-    header: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    success: jest.fn(),
-    newline: jest.fn(),
-  },
+
+jest.mock('@/tui/context', () => ({
+  createTuiContext: jest.fn().mockResolvedValue({
+    banner: jest.fn(),
+    table: jest.fn(),
+    progress: jest.fn(() => ({ update: jest.fn() })),
+    diffView: jest.fn(),
+    log: { info: jest.fn(), success: jest.fn(), warn: jest.fn(), error: jest.fn() },
+    destroy: jest.fn().mockResolvedValue(undefined),
+  }),
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fs = require('fs-extra') as any;
-const { logger } = require('@/ui');
 
-beforeEach(() => {
+let mockTui: any;
+beforeEach(async () => {
   jest.clearAllMocks();
+  const { createTuiContext } = require('@/tui/context');
+  mockTui = await createTuiContext();
 });
 
 // --- parseProposal ---
@@ -207,9 +210,9 @@ describe('scanArchive', () => {
     });
     fs.readdir.mockResolvedValue(['no-proposal-dir'] as any);
 
-    const changes = await scanArchive('/project/openspec/changes/archive');
+    const changes = await scanArchive('/project/openspec/changes/archive', mockTui);
     expect(changes).toHaveLength(0);
-    expect(logger.warn).toHaveBeenCalledWith(
+    expect(mockTui.log.warn).toHaveBeenCalledWith(
       expect.stringContaining('no-proposal-dir')
     );
   });
@@ -238,14 +241,11 @@ describe('runChangelog', () => {
     fs.writeFile.mockResolvedValue(undefined);
   });
 
-  it('with --dry-run prints to stdout and does not write any file', async () => {
-    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-
+  it('with --dry-run prints to tui and does not write any file', async () => {
     await runChangelog({ dryRun: true, dir: '/project' });
 
     expect(fs.writeFile).not.toHaveBeenCalled();
-    expect(consoleSpy).toHaveBeenCalled();
-    consoleSpy.mockRestore();
+    expect(mockTui.log.info).toHaveBeenCalled();
   });
 
   it('without --dry-run writes to CHANGELOG.md', async () => {
@@ -263,7 +263,7 @@ describe('runChangelog', () => {
 
     await runChangelog({ dryRun: false, dir: '/project' });
 
-    expect(logger.warn).toHaveBeenCalledWith(
+    expect(mockTui.log.warn).toHaveBeenCalledWith(
       expect.stringContaining('No archived changes found')
     );
     expect(fs.writeFile).not.toHaveBeenCalled();

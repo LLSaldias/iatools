@@ -1,6 +1,7 @@
 {
     "name": "@lsframework/iatools",
     "version": "2.0.0",
+    "type": "module",
     "description": "CLI tool that bootstraps the Spec-Driven Development (SDD) framework into any project. Installs agents, skills, workflows, and an openspec/ structure tailored to the developer's IDE and role.",
     "main": "./lib/index.js",
     "bin": {
@@ -26,7 +27,7 @@
         "/templates"
     ],
     "scripts": {
-        "compile": "tsc && tsc-alias",
+        "compile": "tsc && tsc-alias && chmod +x lib/index.js",
         "test": "jest --detectOpenHandles",
         "coverage": "jest --coverage --detectOpenHandles",
         "lint": "eslint ./src ./test",
@@ -36,22 +37,16 @@
         "prepublishOnly": "npm run compile && npm run test"
     },
     "dependencies": {
+        "@opentui/core": "^0.1.99",
         "better-sqlite3": "^11.0.0",
-        "boxen": "^5.1.2",
-        "chalk": "^4.1.2",
-        "cli-table3": "^0.6.5",
         "commander": "^12.1.0",
-        "figures": "^3.2.0",
         "fs-extra": "^11.2.0",
-        "inquirer": "^8.2.6",
         "nanoid": "^3.3.7",
-        "ora": "^5.4.1",
         "rxjs": "^7.8.2"
     },
     "devDependencies": {
         "@types/better-sqlite3": "^7.6.12",
         "@types/fs-extra": "^11.0.4",
-        "@types/inquirer": "^8.2.10",
         "@types/jest": "^29.5.14",
         "tsc-alias": "^1.8.16"
     },
